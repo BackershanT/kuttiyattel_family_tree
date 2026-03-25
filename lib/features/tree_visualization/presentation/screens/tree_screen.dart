@@ -95,7 +95,14 @@ class _TreeScreenState extends State<TreeScreen> {
                           padding: const EdgeInsets.symmetric(horizontal: 40),
                           child: Row(
                             children: [
-                              const Spacer(),
+                              IconButton(
+                                icon: const Icon(Icons.list_alt_rounded, color: Colors.grey),
+                                onPressed: () {
+                                  context.pushNamed('family-members');
+                                },
+                                tooltip: 'Family Members List',
+                              ),
+                              const SizedBox(width: 8),
                               Container(
                                 width: 300,
                                 height: 40,

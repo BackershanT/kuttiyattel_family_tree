@@ -104,7 +104,7 @@ class PersonCardWidget extends StatelessWidget {
           const Icon(Icons.account_tree, color: Colors.white, size: 24),
           const SizedBox(width: 12),
           Text(
-            'Family Tree Root',
+            'Kuttiyattel Family',
             style: theme.textTheme.titleMedium?.copyWith(
               fontWeight: FontWeight.bold,
               color: Colors.white,

@@ -15,12 +15,12 @@ final GoRouter appRouter = GoRouter(
     GoRoute(
       path: AppRoutes.home,
       name: 'home',
-      builder: (context, state) => const PersonListScreen(),
+      builder: (context, state) => const TreeScreen(),
       routes: [
         GoRoute(
-          path: 'tree',
-          name: 'tree',
-          builder: (context, state) => const TreeScreen(),
+          path: 'familymembers',
+          name: 'family-members',
+          builder: (context, state) => const PersonListScreen(),
         ),
         GoRoute(
           path: 'add-person',

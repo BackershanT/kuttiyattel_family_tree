@@ -5,6 +5,7 @@ import 'package:cached_network_image/cached_network_image.dart';
 import '../bloc/bloc.dart';
 import '../../data/repositories/person_repository.dart';
 import '../../data/models/person_model.dart';
+import '../../../../core/router/routes.dart';
 
 class PersonListScreen extends StatefulWidget {
   const PersonListScreen({super.key});
@@ -283,8 +284,8 @@ class _PersonListScreenState extends State<PersonListScreen> {
               tooltip: 'Search',
             ),
             IconButton(
-              icon: const Icon(Icons.groups),
-              onPressed: () => context.go('/tree'),
+              icon: const Icon(Icons.account_tree),
+              onPressed: () => context.go(AppRoutes.tree),
               tooltip: 'Family Tree',
             ),
           ],
