@@ -25,6 +25,7 @@ class _AddPersonContent extends StatelessWidget {
     required String name,
     required String? gender,
     required DateTime? dob,
+    required DateTime? dod,
     required String? photoUrl,
   }) {
     final personBloc = context.read<PersonBloc>();
@@ -41,6 +42,7 @@ class _AddPersonContent extends StatelessWidget {
             Text('Name: $name'),
             if (gender != null) Text('Gender: $gender'),
             if (dob != null) Text('DOB: ${_formatDate(dob)}'),
+            if (dod != null) Text('DOD: ${_formatDate(dod)}'),
             if (photoUrl != null) const Text('Photo: ✓'),
           ],
         ),
@@ -58,6 +60,7 @@ class _AddPersonContent extends StatelessWidget {
               print('Name: $name');
               print('Gender: ${gender ?? "Not specified"}');
               print('Date of Birth: ${dob != null ? _formatDate(dob) : "Not specified"}');
+              print('Date of Death: ${dod != null ? _formatDate(dod) : "Not specified"}');
               print('Photo URL: ${photoUrl ?? "No photo"}');
               print('Timestamp: ${DateTime.now().toString()}');
               print('Submitting to database...');
@@ -69,6 +72,7 @@ class _AddPersonContent extends StatelessWidget {
                   name: name,
                   gender: gender,
                   dateOfBirth: dob,
+                  dateOfDeath: dod,
                   photoUrl: photoUrl,
                 ),
               );
@@ -161,12 +165,13 @@ class _AddPersonContent extends StatelessWidget {
                 padding: const EdgeInsets.all(16),
                 child: PersonFormWidget(
                   isLoading: false,
-                  onSave: (name, gender, dob, photoUrl) {
+                  onSave: (name, gender, dob, dod, photoUrl) {
                     _handleSave(
                       context: context,
                       name: name,
                       gender: gender,
                       dob: dob,
+                      dod: dod,
                       photoUrl: photoUrl,
                     );
                   },

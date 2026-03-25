@@ -8,9 +8,10 @@ class PersonFormWidget extends StatefulWidget {
   final String? initialName;
   final String? initialGender;
   final DateTime? initialDob;
+  final DateTime? initialDod;
   final String? initialPhotoUrl;
   final bool isLoading;
-  final Function(String name, String? gender, DateTime? dob, String? photoUrl)
+  final Function(String name, String? gender, DateTime? dob, DateTime? dod, String? photoUrl)
       onSave;
   final VoidCallback? onCancel;
 
@@ -19,6 +20,7 @@ class PersonFormWidget extends StatefulWidget {
     this.initialName,
     this.initialGender,
     this.initialDob,
+    this.initialDod,
     this.initialPhotoUrl,
     this.isLoading = false,
     required this.onSave,
@@ -34,6 +36,7 @@ class _PersonFormWidgetState extends State<PersonFormWidget> {
   late TextEditingController _nameController;
   String? _selectedGender;
   DateTime? _selectedDob;
+  DateTime? _selectedDod;
   String? _photoUrl;
   String? _nameError;
 
@@ -43,6 +46,7 @@ class _PersonFormWidgetState extends State<PersonFormWidget> {
     _nameController = TextEditingController(text: widget.initialName ?? '');
     _selectedGender = widget.initialGender;
     _selectedDob = widget.initialDob;
+    _selectedDod = widget.initialDod;
     _photoUrl = widget.initialPhotoUrl;
   }
 
@@ -56,6 +60,7 @@ class _PersonFormWidgetState extends State<PersonFormWidget> {
     return _nameController.text != (widget.initialName ?? '') ||
         _selectedGender != widget.initialGender ||
         _selectedDob != widget.initialDob ||
+        _selectedDod != widget.initialDod ||
         _photoUrl != widget.initialPhotoUrl;
   }
 
@@ -65,6 +70,7 @@ class _PersonFormWidgetState extends State<PersonFormWidget> {
         _nameController.text.trim(),
         _selectedGender,
         _selectedDob,
+        _selectedDod,
         _photoUrl,
       );
     }
@@ -142,14 +148,31 @@ class _PersonFormWidgetState extends State<PersonFormWidget> {
           ),
           const SizedBox(height: 20),
 
-          // Date Picker
+          // Date of Birth Picker
           Padding(
             padding: const EdgeInsets.symmetric(horizontal: 24),
             child: DatePickerWidget(
+              label: 'Date of Birth',
               value: _selectedDob,
               onChanged: (value) {
                 setState(() {
                   _selectedDob = value;
+                });
+              },
+              errorText: null,
+            ),
+          ),
+          const SizedBox(height: 20),
+
+          // Date of Death Picker
+          Padding(
+            padding: const EdgeInsets.symmetric(horizontal: 24),
+            child: DatePickerWidget(
+              label: 'Date of Death (Optional)',
+              value: _selectedDod,
+              onChanged: (value) {
+                setState(() {
+                  _selectedDod = value;
                 });
               },
               errorText: null,

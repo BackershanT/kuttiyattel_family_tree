@@ -90,6 +90,7 @@ class TreeBloc extends Bloc<TreeEvent, TreeState> {
 
     return TreeNodeData(
       person: root.person,
+      spouse: root.spouse,
       children: updatedChildren,
       isExpanded: root.isExpanded,
       depth: root.depth,

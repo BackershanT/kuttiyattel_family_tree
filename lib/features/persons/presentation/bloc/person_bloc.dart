@@ -36,6 +36,7 @@ class PersonBloc extends Bloc<PersonEvent, PersonState> {
         name: event.name,
         gender: event.gender,
         dateOfBirth: event.dateOfBirth,
+        dateOfDeath: event.dateOfDeath,
         photoUrl: event.photoUrl,
       );
       emit(PersonAdded(person: person));
@@ -54,6 +55,7 @@ class PersonBloc extends Bloc<PersonEvent, PersonState> {
         name: event.name,
         gender: event.gender,
         dateOfBirth: event.dateOfBirth,
+        dateOfDeath: event.dateOfDeath,
         photoUrl: event.photoUrl,
       );
       emit(PersonUpdated(person: person));

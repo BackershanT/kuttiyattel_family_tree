@@ -56,7 +56,7 @@ class _EditPersonScreenState extends State<EditPersonScreen> {
     }
   }
 
-  void _handleSave(String name, String? gender, DateTime? dob, String? photoUrl) {
+  void _handleSave(String name, String? gender, DateTime? dob, DateTime? dod, String? photoUrl) {
     if (_person == null) return;
 
     // Show confirmation dialog
@@ -71,6 +71,7 @@ class _EditPersonScreenState extends State<EditPersonScreen> {
             Text('Name: $name'),
             if (gender != null) Text('Gender: $gender'),
             if (dob != null) Text('DOB: ${_formatDate(dob)}'),
+            if (dod != null) Text('DOD: ${_formatDate(dod)}'),
             if (photoUrl != null) const Text('Photo: ✓'),
           ],
         ),
@@ -88,6 +89,7 @@ class _EditPersonScreenState extends State<EditPersonScreen> {
                   name: name,
                   gender: gender,
                   dateOfBirth: dob,
+                  dateOfDeath: dod,
                   photoUrl: photoUrl,
                 ),
               );
@@ -237,6 +239,7 @@ class _EditPersonScreenState extends State<EditPersonScreen> {
                     initialName: _person!.name,
                     initialGender: _person!.gender,
                     initialDob: _person!.dateOfBirth,
+                    initialDod: _person!.dateOfDeath,
                     initialPhotoUrl: _person!.photoUrl,
                     isLoading: isSaving,
                     onSave: _handleSave,

@@ -13,17 +13,19 @@ class AddPersonEvent extends PersonEvent {
   final String name;
   final String? gender;
   final DateTime? dateOfBirth;
+  final DateTime? dateOfDeath;
   final String? photoUrl;
 
   const AddPersonEvent({
     required this.name,
     this.gender,
     this.dateOfBirth,
+    this.dateOfDeath,
     this.photoUrl,
   });
 
   @override
-  List<Object?> get props => [name, gender, dateOfBirth, photoUrl];
+  List<Object?> get props => [name, gender, dateOfBirth, dateOfDeath, photoUrl];
 }
 
 class UpdatePersonEvent extends PersonEvent {
@@ -31,6 +33,7 @@ class UpdatePersonEvent extends PersonEvent {
   final String name;
   final String? gender;
   final DateTime? dateOfBirth;
+  final DateTime? dateOfDeath;
   final String? photoUrl;
 
   const UpdatePersonEvent({
@@ -38,11 +41,12 @@ class UpdatePersonEvent extends PersonEvent {
     required this.name,
     this.gender,
     this.dateOfBirth,
+    this.dateOfDeath,
     this.photoUrl,
   });
 
   @override
-  List<Object?> get props => [id, name, gender, dateOfBirth, photoUrl];
+  List<Object?> get props => [id, name, gender, dateOfBirth, dateOfDeath, photoUrl];
 }
 
 class DeletePersonEvent extends PersonEvent {

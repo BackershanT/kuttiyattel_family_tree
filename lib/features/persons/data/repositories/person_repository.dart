@@ -39,6 +39,7 @@ class PersonRepository {
     required String name,
     String? gender,
     DateTime? dateOfBirth,
+    DateTime? dateOfDeath,
     String? photoUrl,
   }) async {
     try {
@@ -46,6 +47,7 @@ class PersonRepository {
         'name': name,
         if (gender != null) 'gender': gender,
         if (dateOfBirth != null) 'dob': dateOfBirth.toIso8601String(),
+        if (dateOfDeath != null) 'dod': dateOfDeath.toIso8601String(),
         if (photoUrl != null) 'photo_url': photoUrl,
       };
 
@@ -55,7 +57,29 @@ class PersonRepository {
           .select()
           .single();
 
-      return Person.fromMap(response);
+      final person = Person.fromMap(response);
+
+      // Auto-replicate to events table
+      if (dateOfBirth != null) {
+        await _client.from('events').insert({
+          'title': '${person.name}\'s Birthday',
+          'event_date': dateOfBirth.toIso8601String().split('T')[0],
+          'type': 'birthday',
+          'recurrence': 'yearly',
+          'person_id': person.id,
+        });
+      }
+      if (dateOfDeath != null) {
+        await _client.from('events').insert({
+          'title': '${person.name}\'s Death Anniversary',
+          'event_date': dateOfDeath.toIso8601String().split('T')[0],
+          'type': 'death_anniversary',
+          'recurrence': 'yearly',
+          'person_id': person.id,
+        });
+      }
+
+      return person;
     } catch (e) {
       throw Exception('Failed to add person: $e');
     }
@@ -67,6 +91,7 @@ class PersonRepository {
     required String name,
     String? gender,
     DateTime? dateOfBirth,
+    DateTime? dateOfDeath,
     String? photoUrl,
   }) async {
     try {
@@ -74,6 +99,7 @@ class PersonRepository {
         'name': name,
         if (gender != null) 'gender': gender,
         if (dateOfBirth != null) 'dob': dateOfBirth.toIso8601String(),
+        if (dateOfDeath != null) 'dod': dateOfDeath.toIso8601String(),
         if (photoUrl != null) 'photo_url': photoUrl,
       };
 

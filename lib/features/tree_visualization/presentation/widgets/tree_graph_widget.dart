@@ -8,7 +8,14 @@ import '../widgets/widgets.dart';
 import '../../../../core/router/routes.dart';
 
 class TreeGraphWidget extends StatefulWidget {
-  const TreeGraphWidget({super.key});
+  final ValueChanged<double>? onScaleChanged;
+  final String searchQuery;
+
+  const TreeGraphWidget({
+    super.key,
+    this.onScaleChanged,
+    this.searchQuery = '',
+  });
 
   @override
   State<TreeGraphWidget> createState() => _TreeGraphWidgetState();
@@ -23,6 +30,14 @@ class _TreeGraphWidgetState extends State<TreeGraphWidget> {
     super.initState();
     graph = Graph();
     nodeMap = {};
+    _transformationController.addListener(_onTransformationChanged);
+  }
+
+  void _onTransformationChanged() {
+    final scale = _transformationController.value.getMaxScaleOnAxis();
+    if (scale.isFinite && !scale.isNaN) {
+      widget.onScaleChanged?.call(scale);
+    }
   }
 
   void _buildGraph(TreeLoaded state) {
@@ -88,9 +103,39 @@ class _TreeGraphWidgetState extends State<TreeGraphWidget> {
     }
   }
 
+  final TransformationController _transformationController = TransformationController();
+
+  @override
+  void dispose() {
+    _transformationController.dispose();
+    super.dispose();
+  }
+
+  void _centerRootNode() {
+    if (nodeMap.containsKey('virtual_root')) {
+      // Small delay to ensure layout is complete
+      Future.delayed(const Duration(milliseconds: 500), () {
+        if (!mounted) return;
+        
+        // Reset transformation to top-left of the content
+        _transformationController.value = Matrix4.identity();
+      });
+    }
+  }
+
   @override
   Widget build(BuildContext context) {
-    return BlocBuilder<TreeBloc, TreeState>(
+    return BlocConsumer<TreeBloc, TreeState>(
+      listener: (context, state) {
+        if (state is TreeLoaded) {
+          // Only build graph if it's the first time or if data changed
+          // We can't easily check data change here without deep compare, 
+          // but Bloc should handle emitting only on true changes.
+          print('TREE STATE UPDATED: Rebuilding graph in listener...');
+          _buildGraph(state);
+          _centerRootNode();
+        }
+      },
       builder: (context, state) {
         if (state is TreeLoading) {
           return const Center(
@@ -128,121 +173,63 @@ class _TreeGraphWidgetState extends State<TreeGraphWidget> {
         }
 
         if (state is TreeLoaded) {
-          // Debug logging
-          print('═══════════════════════════════════════════════════');
-          print('TREE DATA LOADED');
-          print('Total nodes in state: ${state.allNodes.length}');
-          print('Root person: ${state.root.person.name} (${state.root.person.id})');
-          
-          // Build graph if empty or if data changed
-          if (graph.nodes.isEmpty || graph.nodes.length != nodeMap.length) {
-            print('Building graph...');
+          // If graph is empty (e.g. initial load), build it once
+          if (graph.nodes.isEmpty) {
             _buildGraph(state);
-            print('Graph built with ${graph.nodes.length} nodes');
-            
-            // Print all node keys for debugging
-            print('Node keys in graph:');
-            var count = 0;
-            for (var node in graph.nodes) {
-              if (count < 10) { // Print first 10 nodes
-                print('  - Node ${count + 1}: key=${node.key?.value ?? "NULL"}, ID=${node.key?.value ?? "N/A"}');
-                count++;
-              }
-            }
-          } else {
-            print('Graph already built with ${graph.nodes.length} nodes');
+            _centerRootNode();
           }
-          print('═══════════════════════════════════════════════════');
 
           return LayoutBuilder(
             builder: (context, constraints) {
+              final configuration = BuchheimWalkerConfiguration()
+                ..orientation = BuchheimWalkerConfiguration.ORIENTATION_TOP_BOTTOM
+                ..siblingSeparation = 150
+                ..levelSeparation = 200
+                ..subtreeSeparation = 200;
+
               return InteractiveViewer(
+                transformationController: _transformationController,
                 constrained: false,
-                boundaryMargin: const EdgeInsets.all(300),
+                boundaryMargin: const EdgeInsets.all(2000),
                 minScale: 0.01,
                 maxScale: 5,
-                child: SizedBox(
-                  width: constraints.maxWidth * 3,
-                  height: constraints.maxHeight * 3,
-                  child: GraphView(
-                    graph: graph,
-                    algorithm: BuchheimWalkerAlgorithm(
-                      BuchheimWalkerConfiguration(),
-                      TreeEdgeRenderer(BuchheimWalkerConfiguration()),
-                    ),
-                    builder: (Node node) {
-                  // Add comprehensive null safety checks with debug logging
-                  print('🔍 Builder called for node');
-                  
-                  if (node.key == null) {
-                    print('❌ ERROR: Node has null key');
-                    return Container(
-                      width: 150,
-                      height: 80,
-                      decoration: BoxDecoration(
-                        color: Colors.red.shade100,
-                        borderRadius: BorderRadius.circular(8),
-                        border: Border.all(color: Colors.red, width: 2),
-                      ),
-                      child: const Center(
-                        child: Text(
-                          'Invalid Node',
-                          style: TextStyle(color: Colors.red, fontSize: 12),
-                        ),
-                      ),
-                    );
-                  }
-                  
-                  print('  Node key exists: ${node.key}');
-                  final nodeId = node.key!.value;
-                  print('  Node ID value: $nodeId');
-                  
-                  if (nodeId == null) {
-                    print('❌ ERROR: Node key value is null');
-                    return Container(
-                      width: 150,
-                      height: 80,
-                      decoration: BoxDecoration(
-                        color: Colors.orange.shade100,
-                        borderRadius: BorderRadius.circular(8),
-                        border: Border.all(color: Colors.orange, width: 2),
-                      ),
-                      child: const Center(
-                        child: Text(
-                          'No ID',
-                          style: TextStyle(color: Colors.orange, fontSize: 12),
-                        ),
-                      ),
-                    );
-                  }
-                  
-                  print('  Looking up treeNode for: $nodeId');
-                  final treeNode = state.allNodes[nodeId];
-                  if (treeNode == null) {
-                    print('⚠️ TreeNode not found for ID: $nodeId');
-                    return const SizedBox.shrink();
-                  }
+                child: GraphView(
+                  graph: graph,
+                  algorithm: BuchheimWalkerAlgorithm(
+                    configuration,
+                    TreeEdgeRenderer(configuration),
+                  ),
+                  builder: (Node node) {
+                    final nodeId = node.key!.value as String;
+                    final treeNode = state.allNodes[nodeId];
+                    if (treeNode == null) return const SizedBox.shrink();
 
-                  print('✅ Rendering: ${treeNode.person.name}');
-                  return PersonCardWidget(
-                    node: treeNode,
-                    showExpandButton: treeNode.children.isNotEmpty,
-                    onTap: () {
-                      if (treeNode.person.id != 'virtual_root') {
-                        GoRouter.of(context).go('/person-details/${treeNode.person.id}');
-                      }
-                    },
-                    onExpandToggle: () {
-                      context.read<TreeBloc>().add(
-                            ToggleNodeExpandCollapseEvent(
-                              personId: treeNode.person.id,
-                            ),
-                          );
-                    },
-                  );
-                },
-              ),
-            ),
+                    final isMatch = widget.searchQuery.isEmpty || 
+                        treeNode.person.name.toLowerCase().contains(widget.searchQuery.toLowerCase());
+
+                    return Opacity(
+                      opacity: isMatch ? 1.0 : 0.3,
+                      child: PersonCardWidget(
+                        node: treeNode,
+                        showExpandButton: treeNode.children.isNotEmpty,
+                        onTap: () {
+                          if (treeNode.person.id != 'virtual_root') {
+                            GoRouter.of(context).go('/person-details/${treeNode.person.id}');
+                          }
+                        },
+                        onExpandToggle: () {
+                          context.read<TreeBloc>().add(
+                                ToggleNodeExpandCollapseEvent(
+                                  personId: treeNode.person.id,
+                                ),
+                              );
+                        },
+                      ),
+                    );
+                  },
+                ),
+              );
+            },
           );
         }
 
@@ -250,7 +237,6 @@ class _TreeGraphWidgetState extends State<TreeGraphWidget> {
           child: Text('No family tree data available'),
         );
       },
-      }
     );
   }
 }

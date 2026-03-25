@@ -3,12 +3,14 @@ import '../../../persons/data/models/person_model.dart';
 /// Represents a node in the family tree hierarchy
 class TreeNodeData {
   final Person person;
+  final Person? spouse;
   final List<TreeNodeData> children;
   bool isExpanded;
   final int depth;
 
   TreeNodeData({
     required this.person,
+    this.spouse,
     this.children = const [],
     this.isExpanded = true,
     this.depth = 0,

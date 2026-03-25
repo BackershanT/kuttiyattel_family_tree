@@ -53,6 +53,8 @@ class RelationshipRepository {
   Future<Relationship> addRelationship({
     required String parentId,
     required String childId,
+    String type = 'parent-child',
+    DateTime? weddingDate,
   }) async {
     try {
       // Validate: Check if relationship already exists
@@ -61,6 +63,7 @@ class RelationshipRepository {
           .select()
           .eq('parent_id', parentId)
           .eq('child_id', childId)
+          .eq('relationship_type', type)
           .maybeSingle();
 
       if (existing != null) {
@@ -69,19 +72,13 @@ class RelationshipRepository {
 
       // Validate: Cannot be your own parent
       if (parentId == childId) {
-        throw Exception('A person cannot be their own parent');
-      }
-
-      // Validate: Prevent circular relationships (simple check)
-      final parentAsChild = await _getDirectParent(parentId);
-      if (parentAsChild == childId) {
-        throw Exception(
-            'Cannot create relationship: This would create a circular dependency');
+        throw Exception('A person cannot be their own kind of relationship with themselves');
       }
 
       final data = {
         'parent_id': parentId,
         'child_id': childId,
+        'relationship_type': type,
       };
 
       final response = await _client
@@ -90,26 +87,32 @@ class RelationshipRepository {
           .select()
           .single();
 
-      return Relationship.fromMap(response);
+      final relationship = Relationship.fromMap(response);
+
+      // If it's a spouse relationship and has a wedding date, add to events table
+      if (type == 'spouse' && weddingDate != null) {
+        // Fetch names for the event title
+        final p1Response = await _client.from(SupabaseConfig.personsTable).select('name').eq('id', parentId).single();
+        final p2Response = await _client.from(SupabaseConfig.personsTable).select('name').eq('id', childId).single();
+        
+        final String p1Name = p1Response['name'] as String;
+        final String p2Name = p2Response['name'] as String;
+
+        await _client.from('events').insert({
+          'title': '$p1Name & $p2Name\'s Wedding Anniversary',
+          'event_date': weddingDate.toIso8601String().split('T')[0],
+          'type': 'wedding_anniversary',
+          'recurrence': 'yearly',
+          'relationship_id': relationship.id,
+        });
+      }
+
+      return relationship;
     } catch (e) {
       throw Exception('Failed to add relationship: $e');
     }
   }
 
-  // Helper method to get direct parent
-  Future<String?> _getDirectParent(String childId) async {
-    try {
-      final response = await _client
-          .from(SupabaseConfig.relationshipsTable)
-          .select('parent_id')
-          .eq('child_id', childId)
-          .maybeSingle();
-
-      return response?['parent_id'] as String?;
-    } catch (e) {
-      return null;
-    }
-  }
 
   // Delete relationship
   Future<void> deleteRelationship(String id) async {

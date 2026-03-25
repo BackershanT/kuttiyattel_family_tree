@@ -3,12 +3,14 @@ import 'package:intl/intl.dart';
 
 /// Date picker widget for birth date selection
 class DatePickerWidget extends StatelessWidget {
+  final String label;
   final DateTime? value;
   final ValueChanged<DateTime?> onChanged;
   final String? errorText;
 
   const DatePickerWidget({
     super.key,
+    this.label = 'Date of Birth',
     this.value,
     required this.onChanged,
     this.errorText,
@@ -21,7 +23,7 @@ class DatePickerWidget extends StatelessWidget {
       initialDate: value ?? DateTime(1950),
       firstDate: DateTime(1900),
       lastDate: now,
-      helpText: 'Select Birth Date',
+      helpText: 'Select $label',
       cancelText: 'Cancel',
       confirmText: 'OK',
     );
@@ -37,7 +39,7 @@ class DatePickerWidget extends StatelessWidget {
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
         Text(
-          'Date of Birth',
+          label,
           style: Theme.of(context).textTheme.titleSmall?.copyWith(
                 fontWeight: FontWeight.w600,
               ),

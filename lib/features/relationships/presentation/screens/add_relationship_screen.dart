@@ -6,6 +6,7 @@ import '../../../persons/data/repositories/person_repository.dart';
 import '../../../persons/data/models/person_model.dart';
 import '../bloc/bloc.dart';
 import '../widgets/person_selector_widget.dart';
+import '../../../persons/presentation/widgets/date_picker_widget.dart';
 
 class AddRelationshipScreen extends StatefulWidget {
   final String? personId; // Optional: pre-select one person
@@ -22,10 +23,17 @@ class AddRelationshipScreen extends StatefulWidget {
 class _AddRelationshipScreenState extends State<AddRelationshipScreen> {
   late RelationshipBloc relationshipBloc;
   List<Person> _persons = [];
-  String? _selectedParentId;
-  String? _selectedChildId;
+  String? _selectedPerson1Id;
+  String? _selectedPerson2Id;
+  String _selectedType = 'parent-child';
+  DateTime? _weddingDate;
   bool _isLoadingPersons = true;
   bool _isAddingRelationship = false;
+
+  final List<Map<String, String>> _relationshipTypes = [
+    {'value': 'parent-child', 'label': 'Parent-Child'},
+    {'value': 'spouse', 'label': 'Spouse (Husband/Wife)'},
+  ];
 
   @override
   void initState() {
@@ -38,44 +46,47 @@ class _AddRelationshipScreenState extends State<AddRelationshipScreen> {
   void _setupBlocListener() {
     relationshipBloc.stream.listen((state) {
       if (state is RelationshipAdded) {
-        ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(
-            content: Text(
-              'Relationship added successfully!',
-              
+        if (mounted) {
+          ScaffoldMessenger.of(context).showSnackBar(
+            const SnackBar(
+              content: Text('Relationship added successfully!'),
+              behavior: SnackBarBehavior.floating,
             ),
-            behavior: SnackBarBehavior.floating,
-          ),
-        );
-        context.go('/'); // Navigate back to home
+          );
+          context.go('/'); // Navigate back to home
+        }
       } else if (state is RelationshipValidated) {
         if (state.isValid && _isAddingRelationship) {
           // Validation passed, proceed with adding
           _proceedAddRelationship();
         } else if (!state.isValid) {
           // Validation failed
+          if (mounted) {
+            setState(() {
+              _isAddingRelationship = false;
+            });
+            ScaffoldMessenger.of(context).showSnackBar(
+              SnackBar(
+                content: Text(state.errorMessage ?? 'Validation failed'),
+                backgroundColor: Colors.red,
+                behavior: SnackBarBehavior.floating,
+              ),
+            );
+          }
+        }
+      } else if (state is RelationshipError) {
+        if (mounted) {
           setState(() {
             _isAddingRelationship = false;
           });
           ScaffoldMessenger.of(context).showSnackBar(
             SnackBar(
-              content: Text(state.errorMessage ?? 'Validation failed'),
+              content: Text('Error: ${state.message}'),
               backgroundColor: Colors.red,
               behavior: SnackBarBehavior.floating,
             ),
           );
         }
-      } else if (state is RelationshipError) {
-        setState(() {
-          _isAddingRelationship = false;
-        });
-        ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(
-            content: Text('Error: ${state.message}'),
-            backgroundColor: Colors.red,
-            behavior: SnackBarBehavior.floating,
-          ),
-        );
       }
     });
   }
@@ -84,20 +95,22 @@ class _AddRelationshipScreenState extends State<AddRelationshipScreen> {
     try {
       final repository = PersonRepository();
       final persons = await repository.getAllPersons();
-      setState(() {
-        _persons = persons;
-        _isLoadingPersons = false;
-        
-        // Pre-select the person if provided
-        if (widget.personId != null) {
-          _selectedParentId = widget.personId;
-        }
-      });
-    } catch (e) {
-      setState(() {
-        _isLoadingPersons = false;
-      });
       if (mounted) {
+        setState(() {
+          _persons = persons;
+          _isLoadingPersons = false;
+          
+          // Pre-select the person if provided
+          if (widget.personId != null) {
+            _selectedPerson1Id = widget.personId;
+          }
+        });
+      }
+    } catch (e) {
+      if (mounted) {
+        setState(() {
+          _isLoadingPersons = false;
+        });
         ScaffoldMessenger.of(context).showSnackBar(
           SnackBar(
             content: Text('Failed to load persons: $e'),
@@ -109,20 +122,23 @@ class _AddRelationshipScreenState extends State<AddRelationshipScreen> {
   }
 
   void _handleAddRelationship() {
-    if (_selectedParentId == null || _selectedChildId == null) {
+    print('USER ACTION: Tap on "Create Relationship"');
+    if (_selectedPerson1Id == null || _selectedPerson2Id == null) {
+      print('⚠️ Validation failed: Both persons not selected');
       ScaffoldMessenger.of(context).showSnackBar(
         const SnackBar(
-          content: Text('Please select both parent and child'),
+          content: Text('Please select both persons'),
           backgroundColor: Colors.orange,
         ),
       );
       return;
     }
 
-    if (_selectedParentId == _selectedChildId) {
+    if (_selectedPerson1Id == _selectedPerson2Id) {
+      print('⚠️ Validation failed: Same person selected');
       ScaffoldMessenger.of(context).showSnackBar(
         const SnackBar(
-          content: Text('A person cannot be their own parent'),
+          content: Text('A person cannot have a relationship with themselves'),
           backgroundColor: Colors.red,
         ),
       );
@@ -133,42 +149,47 @@ class _AddRelationshipScreenState extends State<AddRelationshipScreen> {
     showDialog(
       context: context,
       builder: (dialogContext) {
-        final parent = _persons.firstWhere((p) => p.id == _selectedParentId);
-        final child = _persons.firstWhere((p) => p.id == _selectedChildId);
+        final p1 = _persons.firstWhere((p) => p.id == _selectedPerson1Id);
+        final p2 = _persons.firstWhere((p) => p.id == _selectedPerson2Id);
+        final typeLabel = _relationshipTypes.firstWhere((t) => t['value'] == _selectedType)['label']!;
 
         return AlertDialog(
           title: const Text('Add Relationship'),
           content: Column(
             mainAxisSize: MainAxisSize.min,
             children: [
-              const Text('Create parent-child relationship:'),
+              Text('Create $typeLabel relationship:'),
               const SizedBox(height: 16),
               Row(
                 children: [
                   Expanded(
                     child: Column(
                       children: [
-                        Icon(Icons.person, size: 32),
+                        const Icon(Icons.person, size: 32),
                         const SizedBox(height: 4),
                         Text(
-                          parent.name,
+                          p1.name,
                           style: const TextStyle(fontWeight: FontWeight.bold),
+                          textAlign: TextAlign.center,
                         ),
-                        const Text('Parent', style: TextStyle(fontSize: 12)),
+                        Text(_selectedType == 'parent-child' ? 'Parent' : 'Partner', 
+                           style: const TextStyle(fontSize: 12)),
                       ],
                     ),
                   ),
-                  const Icon(Icons.arrow_downward),
+                  Icon(_selectedType == 'parent-child' ? Icons.arrow_forward : Icons.sync),
                   Expanded(
                     child: Column(
                       children: [
-                        Icon(Icons.person, size: 32),
+                        const Icon(Icons.person, size: 32),
                         const SizedBox(height: 4),
                         Text(
-                          child.name,
+                          p2.name,
                           style: const TextStyle(fontWeight: FontWeight.bold),
+                          textAlign: TextAlign.center,
                         ),
-                        const Text('Child', style: TextStyle(fontSize: 12)),
+                        Text(_selectedType == 'parent-child' ? 'Child' : 'Partner', 
+                           style: const TextStyle(fontSize: 12)),
                       ],
                     ),
                   ),
@@ -178,6 +199,7 @@ class _AddRelationshipScreenState extends State<AddRelationshipScreen> {
               const Text(
                 '⚠️ This will create a permanent family connection.',
                 style: TextStyle(fontStyle: FontStyle.italic),
+                textAlign: TextAlign.center,
               ),
             ],
           ),
@@ -188,12 +210,15 @@ class _AddRelationshipScreenState extends State<AddRelationshipScreen> {
             ),
             FilledButton.icon(
               onPressed: () {
+                print('USER ACTION: Confirm relationship creation ($typeLabel)');
                 Navigator.pop(dialogContext);
+                _isAddingRelationship = true;
                 // Validate first
                 relationshipBloc.add(
                   ValidateRelationshipEvent(
-                    parentId: _selectedParentId!,
-                    childId: _selectedChildId!,
+                    parentId: _selectedPerson1Id!,
+                    childId: _selectedPerson2Id!,
+                    type: _selectedType,
                   ),
                 );
               },
@@ -207,16 +232,15 @@ class _AddRelationshipScreenState extends State<AddRelationshipScreen> {
   }
 
   void _proceedAddRelationship() {
-    if (_selectedParentId == null || _selectedChildId == null) return;
-
-    setState(() {
-      _isAddingRelationship = true;
-    });
+    print('PROCEEDING: Sending AddRelationshipEvent to BLoC');
+    if (_selectedPerson1Id == null || _selectedPerson2Id == null) return;
 
     relationshipBloc.add(
       AddRelationshipEvent(
-        parentId: _selectedParentId!,
-        childId: _selectedChildId!,
+        parentId: _selectedPerson1Id!,
+        childId: _selectedPerson2Id!,
+        type: _selectedType,
+        weddingDate: _weddingDate,
       ),
     );
   }
@@ -256,7 +280,7 @@ class _AddRelationshipScreenState extends State<AddRelationshipScreen> {
                             ),
                             const SizedBox(height: 8),
                             Text(
-                              'Select a parent and a child to create a family relationship.',
+                              'Select two people and specify their relationship.',
                               style: Theme.of(context).textTheme.bodyMedium,
                               textAlign: TextAlign.center,
                             ),
@@ -266,35 +290,74 @@ class _AddRelationshipScreenState extends State<AddRelationshipScreen> {
                     ),
                     const SizedBox(height: 24),
 
-                    // Parent selector
-                    PersonSelectorWidget(
-                      selectedPersonId: _selectedParentId,
-                      onPersonSelected: (id) {
-                        setState(() {
-                          _selectedParentId = id;
-                        });
+                    // Relationship Type selector
+                    DropdownButtonFormField<String>(
+                      value: _selectedType,
+                      decoration: InputDecoration(
+                        labelText: 'Relationship Type *',
+                        border: OutlineInputBorder(
+                          borderRadius: BorderRadius.circular(12),
+                        ),
+                        prefixIcon: const Icon(Icons.category),
+                      ),
+                      items: _relationshipTypes.map((type) {
+                        return DropdownMenuItem<String>(
+                          value: type['value'],
+                          child: Text(type['label']!),
+                        );
+                      }).toList(),
+                      onChanged: (value) {
+                        if (value != null) {
+                          setState(() {
+                            _selectedType = value;
+                          });
+                        }
                       },
-                      label: 'Parent *',
-                      hint: 'Search for parent...',
-                      availablePersons: _persons,
-                      excludePersonId: _selectedChildId,
                     ),
                     const SizedBox(height: 24),
 
-                    // Child selector
+                    // Person 1 selector
                     PersonSelectorWidget(
-                      selectedPersonId: _selectedChildId,
+                      selectedPersonId: _selectedPerson1Id,
                       onPersonSelected: (id) {
                         setState(() {
-                          _selectedChildId = id;
+                          _selectedPerson1Id = id;
                         });
                       },
-                      label: 'Child *',
-                      hint: 'Search for child...',
+                      label: _selectedType == 'parent-child' ? 'Parent *' : 'Person 1 *',
+                      hint: 'Search for person...',
                       availablePersons: _persons,
-                      excludePersonId: _selectedParentId,
+                      excludePersonId: _selectedPerson2Id,
                     ),
-                    const SizedBox(height: 32),
+                    const SizedBox(height: 24),
+
+                    // Person 2 selector
+                    PersonSelectorWidget(
+                      selectedPersonId: _selectedPerson2Id,
+                      onPersonSelected: (id) {
+                        setState(() {
+                          _selectedPerson2Id = id;
+                        });
+                      },
+                      label: _selectedType == 'parent-child' ? 'Child *' : 'Person 2 *',
+                      hint: 'Search for person...',
+                      availablePersons: _persons,
+                      excludePersonId: _selectedPerson1Id,
+                    ),
+                    const SizedBox(height: 24),
+
+                    if (_selectedType == 'spouse') ...[
+                      DatePickerWidget(
+                        label: 'Wedding Date (Optional)',
+                        value: _weddingDate,
+                        onChanged: (date) {
+                          setState(() {
+                            _weddingDate = date;
+                          });
+                        },
+                      ),
+                      const SizedBox(height: 24),
+                    ],
 
                     // Action buttons
                     Row(
@@ -315,8 +378,8 @@ class _AddRelationshipScreenState extends State<AddRelationshipScreen> {
                         Expanded(
                           flex: 2,
                           child: FilledButton.icon(
-                            onPressed: (_selectedParentId != null &&
-                                    _selectedChildId != null &&
+                            onPressed: (_selectedPerson1Id != null &&
+                                    _selectedPerson2Id != null &&
                                     !_isAddingRelationship)
                                 ? _handleAddRelationship
                                 : null,
