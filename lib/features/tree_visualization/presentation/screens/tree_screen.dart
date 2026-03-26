@@ -61,7 +61,7 @@ class _TreeScreenState extends State<TreeScreen> {
               Positioned.fill(
                 child: Column(
                   children: [
-                    const SizedBox(height: 120),
+                    const SizedBox(height: 140), // Increased height for the top bar
                     Expanded(
                       child: _buildBody(),
                     ),
@@ -103,31 +103,32 @@ class _TreeScreenState extends State<TreeScreen> {
                                 tooltip: 'Family Members List',
                               ),
                               const SizedBox(width: 8),
-                              Container(
-                                width: 300,
-                                height: 40,
-                                decoration: BoxDecoration(
-                                  color: Colors.grey[100],
-                                  borderRadius: BorderRadius.circular(20),
-                                ),
-                                child: Row(
-                                  children: [
-                                    const SizedBox(width: 12),
-                                    const Icon(Icons.search, size: 20, color: Colors.grey),
-                                    const SizedBox(width: 8),
-                                    Expanded(
-                                      child: TextField(
-                                        controller: _searchController,
-                                        decoration: const InputDecoration(
-                                          hintText: 'Search Members',
-                                          border: InputBorder.none,
-                                          hintStyle: TextStyle(fontSize: 14),
+                              Expanded(
+                                child: Container(
+                                  height: 40,
+                                  decoration: BoxDecoration(
+                                    color: Colors.grey[100],
+                                    borderRadius: BorderRadius.circular(20),
+                                  ),
+                                  child: Row(
+                                    children: [
+                                      const SizedBox(width: 12),
+                                      const Icon(Icons.search, size: 20, color: Colors.grey),
+                                      const SizedBox(width: 8),
+                                      Expanded(
+                                        child: TextField(
+                                          controller: _searchController,
+                                          decoration: const InputDecoration(
+                                            hintText: 'Search Members',
+                                            border: InputBorder.none,
+                                            hintStyle: TextStyle(fontSize: 14),
+                                          ),
                                         ),
                                       ),
-                                    ),
-                                    const Icon(Icons.keyboard_arrow_down, color: Colors.grey),
-                                    const SizedBox(width: 12),
-                                  ],
+                                      const Icon(Icons.keyboard_arrow_down, color: Colors.grey),
+                                      const SizedBox(width: 12),
+                                    ],
+                                  ),
                                 ),
                               ),
                               const SizedBox(width: 16),

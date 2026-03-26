@@ -193,40 +193,44 @@ class _TreeGraphWidgetState extends State<TreeGraphWidget> {
                 boundaryMargin: const EdgeInsets.all(2000),
                 minScale: 0.01,
                 maxScale: 5,
-                child: GraphView(
-                  graph: graph,
-                  algorithm: BuchheimWalkerAlgorithm(
-                    configuration,
-                    TreeEdgeRenderer(configuration),
+                child: SizedBox(
+                  width: 5000,
+                  height: 5000,
+                  child: GraphView(
+                    graph: graph,
+                    algorithm: BuchheimWalkerAlgorithm(
+                      configuration,
+                      TreeEdgeRenderer(configuration),
+                    ),
+                    builder: (Node node) {
+                      final nodeId = node.key!.value as String;
+                      final treeNode = state.allNodes[nodeId];
+                      if (treeNode == null) return const SizedBox.shrink();
+
+                      final isMatch = widget.searchQuery.isEmpty || 
+                          treeNode.person.name.toLowerCase().contains(widget.searchQuery.toLowerCase());
+
+                      return Opacity(
+                        opacity: isMatch ? 1.0 : 0.3,
+                        child: PersonCardWidget(
+                          node: treeNode,
+                          showExpandButton: treeNode.children.isNotEmpty,
+                          onTap: () {
+                            if (treeNode.person.id != 'virtual_root') {
+                              GoRouter.of(context).go('/person-details/${treeNode.person.id}');
+                            }
+                          },
+                          onExpandToggle: () {
+                            context.read<TreeBloc>().add(
+                                  ToggleNodeExpandCollapseEvent(
+                                    personId: treeNode.person.id,
+                                  ),
+                                );
+                          },
+                        ),
+                      );
+                    },
                   ),
-                  builder: (Node node) {
-                    final nodeId = node.key!.value as String;
-                    final treeNode = state.allNodes[nodeId];
-                    if (treeNode == null) return const SizedBox.shrink();
-
-                    final isMatch = widget.searchQuery.isEmpty || 
-                        treeNode.person.name.toLowerCase().contains(widget.searchQuery.toLowerCase());
-
-                    return Opacity(
-                      opacity: isMatch ? 1.0 : 0.3,
-                      child: PersonCardWidget(
-                        node: treeNode,
-                        showExpandButton: treeNode.children.isNotEmpty,
-                        onTap: () {
-                          if (treeNode.person.id != 'virtual_root') {
-                            GoRouter.of(context).go('/person-details/${treeNode.person.id}');
-                          }
-                        },
-                        onExpandToggle: () {
-                          context.read<TreeBloc>().add(
-                                ToggleNodeExpandCollapseEvent(
-                                  personId: treeNode.person.id,
-                                ),
-                              );
-                        },
-                      ),
-                    );
-                  },
                 ),
               );
             },
