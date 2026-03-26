@@ -4,6 +4,7 @@ class Person {
   final String name;
   final String? gender;
   final DateTime? dateOfBirth;
+  final DateTime? marriageDate;
   final DateTime? dateOfDeath;
   final String? photoUrl;
   final DateTime? createdAt;
@@ -13,6 +14,7 @@ class Person {
     required this.name,
     this.gender,
     this.dateOfBirth,
+    this.marriageDate,
     this.dateOfDeath,
     this.photoUrl,
     this.createdAt,
@@ -25,6 +27,9 @@ class Person {
       gender: map['gender'] as String?,
       dateOfBirth: map['dob'] != null 
           ? DateTime.parse(map['dob'] as String) 
+          : null,
+      marriageDate: map['marriage_date'] != null 
+          ? DateTime.parse(map['marriage_date'] as String) 
           : null,
       dateOfDeath: map['dod'] != null 
           ? DateTime.parse(map['dod'] as String) 
@@ -42,6 +47,7 @@ class Person {
       'name': name,
       'gender': gender,
       'dob': dateOfBirth?.toIso8601String(),
+      'marriage_date': marriageDate?.toIso8601String(),
       'dod': dateOfDeath?.toIso8601String(),
       'photo_url': photoUrl,
       'created_at': createdAt?.toIso8601String(),

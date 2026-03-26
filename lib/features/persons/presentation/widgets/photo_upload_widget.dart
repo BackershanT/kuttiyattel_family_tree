@@ -12,12 +12,14 @@ import 'package:http/http.dart' as http;
 class PhotoUploadWidget extends StatefulWidget {
   final String? currentPhotoUrl;
   final ValueChanged<String?> onPhotoUploaded;
+  final ValueChanged<bool>? onUploadingChanged;
   final bool isLoading;
 
   const PhotoUploadWidget({
     super.key,
     this.currentPhotoUrl,
     required this.onPhotoUploaded,
+    this.onUploadingChanged,
     this.isLoading = false,
   });
 
@@ -44,12 +46,17 @@ class _PhotoUploadWidgetState extends State<PhotoUploadWidget> {
       if (image != null) {
         // Read bytes for web compatibility
         final bytes = await image.readAsBytes();
+        final extension = image.name.split('.').last;
         
         setState(() {
-          _localFile = File(image.path);
-          _imageBytes = bytes; // Store bytes for web display
+          // Store bytes for web display
+          _imageBytes = bytes; 
+          // We can't use File(image.path) on web safely, 
+          // but we can set it to null or a placeholder if needed.
+          // Since we use _imageBytes for display, we don't strictly need _localFile.
+          _localFile = null; 
         });
-        await _uploadToSupabase(_localFile!);
+        await _uploadToSupabase(bytes, extension);
       }
     } catch (e) {
       if (mounted) {
@@ -60,34 +67,50 @@ class _PhotoUploadWidgetState extends State<PhotoUploadWidget> {
     }
   }
 
-  Future<void> _uploadToSupabase(File file) async {
+  Future<void> _uploadToSupabase(Uint8List fileBytes, String fileExtension) async {
     setState(() {
       _isUploading = true;
     });
+    widget.onUploadingChanged?.call(true);
 
     try {
       // Generate unique filename
       final uuid = const Uuid().v4();
-      final fileExtension = file.path.split('.').last;
       final fileName = 'person_$uuid.$fileExtension';
 
-      // Read file bytes
-      final fileBytes = await file.readAsBytes();
+      print('═══════════════════════════════════════════════════════════');
+      print('PHOTO UPLOAD: STARTING');
+      print('Bucket: PHOTOS');
+      print('FileName: $fileName');
+      print('Size: ${fileBytes.length} bytes');
+      print('═══════════════════════════════════════════════════════════');
 
-      // Upload to Supabase Storage bucket 'person-photos'
+      // Upload to Supabase Storage bucket 'PHOTOS'
       await Supabase.instance.client.storage
-          .from('person-photos')
-          .uploadBinary(fileName, fileBytes);
+          .from('PHOTOS')
+          .uploadBinary(
+            fileName, 
+            fileBytes,
+            fileOptions: const FileOptions(
+              contentType: 'image/jpeg', // Default to jpeg, or dynamic based on extension
+              upsert: true,
+            ),
+          );
 
       // Get public URL
       final publicUrl = Supabase.instance.client.storage
-          .from('person-photos')
+          .from('PHOTOS')
           .getPublicUrl(fileName);
+
+      print('UPLOAD SUCCESSFUL');
+      print('Public URL: $publicUrl');
+      print('═══════════════════════════════════════════════════════════');
 
       setState(() {
         _uploadedPhotoUrl = publicUrl;
         _isUploading = false;
       });
+      widget.onUploadingChanged?.call(false);
 
       widget.onPhotoUploaded(publicUrl);
 
@@ -100,9 +123,13 @@ class _PhotoUploadWidgetState extends State<PhotoUploadWidget> {
         );
       }
     } catch (e) {
+      print('UPLOAD FAILED: $e');
+      print('═══════════════════════════════════════════════════════════');
+
       setState(() {
         _isUploading = false;
       });
+      widget.onUploadingChanged?.call(false);
 
       if (mounted) {
         ScaffoldMessenger.of(context).showSnackBar(
@@ -158,6 +185,7 @@ class _PhotoUploadWidgetState extends State<PhotoUploadWidget> {
   void _removePhoto() {
     setState(() {
       _localFile = null;
+      _imageBytes = null;
       _uploadedPhotoUrl = null;
     });
     widget.onPhotoUploaded(null);
@@ -196,7 +224,7 @@ class _PhotoUploadWidgetState extends State<PhotoUploadWidget> {
                 ? const Center(
                     child: CircularProgressIndicator(),
                   )
-                : _getDisplayImage() != null
+                : _imageBytes != null
                     ? ClipOval(
                         child: Image.memory(
                           _imageBytes!,
@@ -271,9 +299,5 @@ class _PhotoUploadWidgetState extends State<PhotoUploadWidget> {
       ],
     );
   }
-
-  File? _getDisplayImage() {
-    if (_localFile != null) return _localFile;
-    return null;
-  }
 }
+

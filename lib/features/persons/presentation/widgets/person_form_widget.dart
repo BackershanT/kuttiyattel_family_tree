@@ -8,10 +8,11 @@ class PersonFormWidget extends StatefulWidget {
   final String? initialName;
   final String? initialGender;
   final DateTime? initialDob;
+  final DateTime? initialMarriageDate;
   final DateTime? initialDod;
   final String? initialPhotoUrl;
   final bool isLoading;
-  final Function(String name, String? gender, DateTime? dob, DateTime? dod, String? photoUrl)
+  final Function(String name, String? gender, DateTime? dob, DateTime? marriageDate, DateTime? dod, String? photoUrl)
       onSave;
   final VoidCallback? onCancel;
 
@@ -20,6 +21,7 @@ class PersonFormWidget extends StatefulWidget {
     this.initialName,
     this.initialGender,
     this.initialDob,
+    this.initialMarriageDate,
     this.initialDod,
     this.initialPhotoUrl,
     this.isLoading = false,
@@ -36,8 +38,11 @@ class _PersonFormWidgetState extends State<PersonFormWidget> {
   late TextEditingController _nameController;
   String? _selectedGender;
   DateTime? _selectedDob;
+  DateTime? _selectedMarriageDate;
   DateTime? _selectedDod;
   String? _photoUrl;
+  bool _isPhotoUploading = false;
+  bool _isMarried = false;
   String? _nameError;
 
   @override
@@ -46,6 +51,8 @@ class _PersonFormWidgetState extends State<PersonFormWidget> {
     _nameController = TextEditingController(text: widget.initialName ?? '');
     _selectedGender = widget.initialGender;
     _selectedDob = widget.initialDob;
+    _selectedMarriageDate = widget.initialMarriageDate;
+    _isMarried = widget.initialMarriageDate != null;
     _selectedDod = widget.initialDod;
     _photoUrl = widget.initialPhotoUrl;
   }
@@ -60,6 +67,7 @@ class _PersonFormWidgetState extends State<PersonFormWidget> {
     return _nameController.text != (widget.initialName ?? '') ||
         _selectedGender != widget.initialGender ||
         _selectedDob != widget.initialDob ||
+        _selectedMarriageDate != widget.initialMarriageDate ||
         _selectedDod != widget.initialDod ||
         _photoUrl != widget.initialPhotoUrl;
   }
@@ -70,6 +78,7 @@ class _PersonFormWidgetState extends State<PersonFormWidget> {
         _nameController.text.trim(),
         _selectedGender,
         _selectedDob,
+        _isMarried ? _selectedMarriageDate : null,
         _selectedDod,
         _photoUrl,
       );
@@ -91,6 +100,11 @@ class _PersonFormWidgetState extends State<PersonFormWidget> {
               onPhotoUploaded: (url) {
                 setState(() {
                   _photoUrl = url;
+                });
+              },
+              onUploadingChanged: (isUploading) {
+                setState(() {
+                  _isPhotoUploading = isUploading;
                 });
               },
               isLoading: widget.isLoading,
@@ -164,6 +178,43 @@ class _PersonFormWidgetState extends State<PersonFormWidget> {
           ),
           const SizedBox(height: 20),
 
+          // Married Switch
+          Padding(
+            padding: const EdgeInsets.symmetric(horizontal: 12),
+            child: SwitchListTile(
+              title: const Text('Married'),
+              subtitle: const Text('Show marriage details'),
+              value: _isMarried,
+              onChanged: (value) {
+                setState(() {
+                  _isMarried = value;
+                  if (!value) {
+                    _selectedMarriageDate = null;
+                  }
+                });
+              },
+              secondary: const Icon(Icons.favorite_outline),
+            ),
+          ),
+          const SizedBox(height: 10),
+
+          // Date of Marriage Picker (Conditional)
+          if (_isMarried)
+            Padding(
+              padding: const EdgeInsets.symmetric(horizontal: 24),
+              child: DatePickerWidget(
+                label: 'Date of Marriage',
+                value: _selectedMarriageDate,
+                onChanged: (value) {
+                  setState(() {
+                    _selectedMarriageDate = value;
+                  });
+                },
+                errorText: null,
+              ),
+            ),
+          if (_isMarried) const SizedBox(height: 20),
+
           // Date of Death Picker
           Padding(
             padding: const EdgeInsets.symmetric(horizontal: 24),
@@ -202,8 +253,8 @@ class _PersonFormWidgetState extends State<PersonFormWidget> {
                 Expanded(
                   flex: widget.onCancel != null ? 2 : 1,
                   child: FilledButton.icon(
-                    onPressed: widget.isLoading ? null : _handleSave,
-                    icon: widget.isLoading
+                    onPressed: (widget.isLoading || _isPhotoUploading) ? null : _handleSave,
+                    icon: (widget.isLoading || _isPhotoUploading)
                         ? const SizedBox(
                             width: 16,
                             height: 16,
@@ -215,7 +266,11 @@ class _PersonFormWidgetState extends State<PersonFormWidget> {
                             ),
                           )
                         : const Icon(Icons.save),
-                    label: Text(widget.isLoading ? 'Saving...' : 'Save'),
+                    label: Text(widget.isLoading
+                        ? 'Saving...'
+                        : _isPhotoUploading
+                            ? 'Uploading...'
+                            : 'Save'),
                     style: FilledButton.styleFrom(
                       padding: const EdgeInsets.symmetric(vertical: 16),
                       shape: RoundedRectangleBorder(

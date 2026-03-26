@@ -39,6 +39,7 @@ class PersonRepository {
     required String name,
     String? gender,
     DateTime? dateOfBirth,
+    DateTime? marriageDate,
     DateTime? dateOfDeath,
     String? photoUrl,
   }) async {
@@ -47,9 +48,15 @@ class PersonRepository {
         'name': name,
         if (gender != null) 'gender': gender,
         if (dateOfBirth != null) 'dob': dateOfBirth.toIso8601String(),
+        if (marriageDate != null) 'marriage_date': marriageDate.toIso8601String(),
         if (dateOfDeath != null) 'dod': dateOfDeath.toIso8601String(),
         if (photoUrl != null) 'photo_url': photoUrl,
       };
+      
+      print('═══════════════════════════════════════════════════════════');
+      print('PERSON REPOSITORY: INSERTING DATA');
+      print('Data: $data');
+      print('═══════════════════════════════════════════════════════════');
 
       final response = await _client
           .from(SupabaseConfig.personsTable)
@@ -91,6 +98,7 @@ class PersonRepository {
     required String name,
     String? gender,
     DateTime? dateOfBirth,
+    DateTime? marriageDate,
     DateTime? dateOfDeath,
     String? photoUrl,
   }) async {
@@ -99,6 +107,7 @@ class PersonRepository {
         'name': name,
         if (gender != null) 'gender': gender,
         if (dateOfBirth != null) 'dob': dateOfBirth.toIso8601String(),
+        if (marriageDate != null) 'marriage_date': marriageDate.toIso8601String(),
         if (dateOfDeath != null) 'dod': dateOfDeath.toIso8601String(),
         if (photoUrl != null) 'photo_url': photoUrl,
       };

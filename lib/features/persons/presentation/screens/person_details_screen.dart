@@ -210,11 +210,6 @@ class _PersonDetailsScreenState extends State<PersonDetailsScreen> {
         title: const Text('Person Details'),
         actions: [
           IconButton(
-            icon: const Icon(Icons.edit),
-            onPressed: () => context.push('/edit-person/$widget.personId'),
-            tooltip: 'Edit',
-          ),
-          IconButton(
             icon: const Icon(Icons.delete_outline, color: Colors.red),
             onPressed: _isLoading ? null : _showDeleteConfirmation,
             tooltip: 'Delete',

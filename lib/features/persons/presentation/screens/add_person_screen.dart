@@ -25,6 +25,7 @@ class _AddPersonContent extends StatelessWidget {
     required String name,
     required String? gender,
     required DateTime? dob,
+    required DateTime? marriageDate,
     required DateTime? dod,
     required String? photoUrl,
   }) {
@@ -42,6 +43,7 @@ class _AddPersonContent extends StatelessWidget {
             Text('Name: $name'),
             if (gender != null) Text('Gender: $gender'),
             if (dob != null) Text('DOB: ${_formatDate(dob)}'),
+            if (marriageDate != null) Text('Marriage: ${_formatDate(marriageDate)}'),
             if (dod != null) Text('DOD: ${_formatDate(dod)}'),
             if (photoUrl != null) const Text('Photo: ✓'),
           ],
@@ -60,6 +62,7 @@ class _AddPersonContent extends StatelessWidget {
               print('Name: $name');
               print('Gender: ${gender ?? "Not specified"}');
               print('Date of Birth: ${dob != null ? _formatDate(dob) : "Not specified"}');
+              print('Marriage Date: ${marriageDate != null ? _formatDate(marriageDate) : "Not specified"}');
               print('Date of Death: ${dod != null ? _formatDate(dod) : "Not specified"}');
               print('Photo URL: ${photoUrl ?? "No photo"}');
               print('Timestamp: ${DateTime.now().toString()}');
@@ -72,6 +75,7 @@ class _AddPersonContent extends StatelessWidget {
                   name: name,
                   gender: gender,
                   dateOfBirth: dob,
+                  marriageDate: marriageDate,
                   dateOfDeath: dod,
                   photoUrl: photoUrl,
                 ),
@@ -112,8 +116,8 @@ class _AddPersonContent extends StatelessWidget {
                 behavior: SnackBarBehavior.floating,
               ),
             );
-            // Navigate back to home
-            context.go('/');
+            // Navigate back to family members
+            context.go('/familymembers');
           } else if (state is PersonsError) {
             ScaffoldMessenger.of(context).showSnackBar(
               SnackBar(
@@ -131,7 +135,7 @@ class _AddPersonContent extends StatelessWidget {
           if (isLoading) {
             return Stack(
               children: [
-                _buildForm(context),
+                _buildForm(context, true),
                 Container(
                   color: Colors.black26,
                   child: const Center(
@@ -142,13 +146,13 @@ class _AddPersonContent extends StatelessWidget {
             );
           }
           
-          return _buildForm(context);
+          return _buildForm(context, false);
         },
       ),
     );
   }
   
-  Widget _buildForm(BuildContext context) {
+  Widget _buildForm(BuildContext context, bool isLoading) {
     return Container(
       color: Theme.of(context).colorScheme.surface,
       child: SingleChildScrollView(
@@ -164,19 +168,20 @@ class _AddPersonContent extends StatelessWidget {
               child: Padding(
                 padding: const EdgeInsets.all(16),
                 child: PersonFormWidget(
-                  isLoading: false,
-                  onSave: (name, gender, dob, dod, photoUrl) {
+                  isLoading: isLoading,
+                  onSave: (name, gender, dob, marriageDate, dod, photoUrl) {
                     _handleSave(
                       context: context,
                       name: name,
                       gender: gender,
                       dob: dob,
+                      marriageDate: marriageDate,
                       dod: dod,
                       photoUrl: photoUrl,
                     );
                   },
                   onCancel: () {
-                    context.go('/');
+                    context.go('/familymembers');
                   },
                 ),
               ),

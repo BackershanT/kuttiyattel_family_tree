@@ -56,7 +56,7 @@ class _EditPersonScreenState extends State<EditPersonScreen> {
     }
   }
 
-  void _handleSave(String name, String? gender, DateTime? dob, DateTime? dod, String? photoUrl) {
+  void _handleSave(String name, String? gender, DateTime? dob, DateTime? marriageDate, DateTime? dod, String? photoUrl) {
     if (_person == null) return;
 
     // Show confirmation dialog
@@ -71,6 +71,7 @@ class _EditPersonScreenState extends State<EditPersonScreen> {
             Text('Name: $name'),
             if (gender != null) Text('Gender: $gender'),
             if (dob != null) Text('DOB: ${_formatDate(dob)}'),
+            if (marriageDate != null) Text('Marriage: ${_formatDate(marriageDate)}'),
             if (dod != null) Text('DOD: ${_formatDate(dod)}'),
             if (photoUrl != null) const Text('Photo: ✓'),
           ],
@@ -89,6 +90,7 @@ class _EditPersonScreenState extends State<EditPersonScreen> {
                   name: name,
                   gender: gender,
                   dateOfBirth: dob,
+                  marriageDate: marriageDate,
                   dateOfDeath: dod,
                   photoUrl: photoUrl,
                 ),
@@ -176,7 +178,7 @@ class _EditPersonScreenState extends State<EditPersonScreen> {
                 ),
               );
               // Navigate back
-              context.go('/');
+              context.go('/familymembers');
             } else if (state is PersonDeleted) {
               ScaffoldMessenger.of(context).showSnackBar(
                 const SnackBar(
@@ -186,7 +188,7 @@ class _EditPersonScreenState extends State<EditPersonScreen> {
                 ),
               );
               // Navigate back
-              context.go('/');
+              context.go('/familymembers');
             } else if (state is PersonsError) {
               ScaffoldMessenger.of(context).showSnackBar(
                 SnackBar(
@@ -222,7 +224,7 @@ class _EditPersonScreenState extends State<EditPersonScreen> {
                     ),
                     const SizedBox(height: 8),
                     FilledButton.icon(
-                      onPressed: () => context.go('/'),
+                      onPressed: () => context.go('/familymembers'),
                       icon: const Icon(Icons.arrow_back),
                       label: const Text('Go Back'),
                     ),
@@ -239,11 +241,12 @@ class _EditPersonScreenState extends State<EditPersonScreen> {
                     initialName: _person!.name,
                     initialGender: _person!.gender,
                     initialDob: _person!.dateOfBirth,
+                    initialMarriageDate: _person!.marriageDate,
                     initialDod: _person!.dateOfDeath,
                     initialPhotoUrl: _person!.photoUrl,
                     isLoading: isSaving,
                     onSave: _handleSave,
-                    onCancel: () => context.go('/'),
+                    onCancel: () => context.go('/familymembers'),
                   ),
                 ),
                 if (isSaving)
