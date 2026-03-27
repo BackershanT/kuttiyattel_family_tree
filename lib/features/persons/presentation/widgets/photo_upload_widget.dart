@@ -1,6 +1,5 @@
 import 'dart:async';
 import 'dart:convert';
-import 'dart:io';
 import 'dart:typed_data';
 import 'package:flutter/material.dart';
 import 'package:image_picker/image_picker.dart';
@@ -28,7 +27,6 @@ class PhotoUploadWidget extends StatefulWidget {
 }
 
 class _PhotoUploadWidgetState extends State<PhotoUploadWidget> {
-  File? _localFile;
   Uint8List? _imageBytes; // For web compatibility
   bool _isUploading = false;
   String? _uploadedPhotoUrl;
@@ -51,10 +49,6 @@ class _PhotoUploadWidgetState extends State<PhotoUploadWidget> {
         setState(() {
           // Store bytes for web display
           _imageBytes = bytes; 
-          // We can't use File(image.path) on web safely, 
-          // but we can set it to null or a placeholder if needed.
-          // Since we use _imageBytes for display, we don't strictly need _localFile.
-          _localFile = null; 
         });
         await _uploadToSupabase(bytes, extension);
       }
@@ -184,7 +178,6 @@ class _PhotoUploadWidgetState extends State<PhotoUploadWidget> {
 
   void _removePhoto() {
     setState(() {
-      _localFile = null;
       _imageBytes = null;
       _uploadedPhotoUrl = null;
     });
