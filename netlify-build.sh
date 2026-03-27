@@ -14,6 +14,6 @@ flutter doctor -v
 
 # Get packages and build web
 flutter clean
-rm -rf ~/.pub-cache
+flutter pub cache repair
 flutter pub get
 flutter build web --release
