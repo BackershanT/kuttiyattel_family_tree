@@ -14,8 +14,12 @@ void main() async {
 
 
 
-  // Load environment variables
-  await dotenv.load(fileName: ".env");
+  // Load environment variables (optional for production)
+  try {
+    await dotenv.load(fileName: ".env");
+  } catch (e) {
+    print('Note: .env file not found, using environment variables');
+  }
   
   // Initialize Supabase
   await Supabase.initialize(
