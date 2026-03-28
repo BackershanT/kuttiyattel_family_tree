@@ -9,11 +9,12 @@ fi
 export PATH="$HOME/flutter/bin:$PATH"
 
 # Force Flutter to download required artifacts
+flutter channel stable
+flutter upgrade
 flutter --version
 flutter doctor -v
 
 # Get packages and build web
 flutter clean
-flutter pub cache repair
 flutter pub get
-flutter build web --release
+flutter build web --release -v
