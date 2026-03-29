@@ -6,7 +6,9 @@
     fi && \
     export PATH="$HOME/flutter/bin:$PATH" && \
     flutter doctor && \
-    export PUB_CACHE="$PWD/.pub-cache" && \
+    # Use absolute path outside repo for PUB_CACHE to avoid relative path issues in package_config.json
+    export PUB_CACHE="/opt/build/pub-cache" && \
+    mkdir -p "$PUB_CACHE" && \
     flutter clean && \
     rm -rf .dart_tool && \
     flutter pub get && \
