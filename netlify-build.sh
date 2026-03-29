@@ -1,7 +1,7 @@
 #!/usr/bin/env bash
 # ---------------------------------------------------------
-# Netlify Build Script for Flutter Web - ROBUST VERSION
-# Fixes corrupted pub-cache issues
+# Netlify Build Script for Flutter Web - NUCLEAR OPTION
+# Destroys ALL caches to force 100% fresh download
 # ---------------------------------------------------------
 set -euo pipefail
 
@@ -23,42 +23,35 @@ flutter --version
 echo ">>> Enabling Flutter web support..."
 flutter config --enable-web
 
-# CRITICAL FIX: Clear pub cache BEFORE any package operations
-echo ">>> FIXING PUB CACHE - Removing corrupted packages..."
+# NUCLEAR OPTION: Destroy ALL caches
+echo ">>> DESTROYING ALL CACHES..."
 rm -rf $HOME/.pub-cache
+rm -rf flutter-sdk/.pub-cache || true
+rm -rf .dart_tool || true
+
+echo ">>> Cleaning project..."
+flutter clean
+
+echo ">>> Creating fresh pub cache..."
 mkdir -p $HOME/.pub-cache/hosted/pub.dev
 
-# Precache web artifacts (after cache clear)
-echo ">>> Precaching web artifacts..."
-flutter precache --web
+# Fetch dependencies completely fresh
+echo ">>> Fetching dependencies FRESH from pub.dev..."
+flutter pub get
 
-# Get dependencies with explicit retry
-echo ">>> Installing dependencies (first attempt)..."
-if ! flutter pub get; then
-  echo ">>> First attempt failed, retrying..."
-  rm -rf $HOME/.pub-cache/hosted/pub.dev/graphview-*
-  flutter pub get
-fi
-
-# CRITICAL: Verify graphview was installed correctly
-echo ">>> Verifying graphview installation..."
-GRAPHVIEW_DIR=$(find $HOME/.pub-cache -name "graphview-1.5.1" -type d | head -1)
-if [ -z "$GRAPHVIEW_DIR" ]; then
-  echo "ERROR: graphview 1.5.1 not found in pub cache!"
-  echo "Available graphview versions:"
-  find $HOME/.pub-cache -name "graphview-*" -type d || echo "None found"
+# Verify graphview installation
+echo ">>> Verifying graphview package..."
+GRAPHVIEW_LIB=$(find $HOME/.pub-cache -path "*/graphview-*/lib/graphview.dart" | head -1)
+if [ -z "$GRAPHVIEW_LIB" ]; then
+  echo "ERROR: graphview.dart not found anywhere in pub cache!"
+  echo "Searching for graphview packages..."
+  find $HOME/.pub-cache -name "graphview*" -type d || echo "None found"
   exit 1
 fi
 
-echo ">>> Graphview found at: $GRAPHVIEW_DIR"
-echo ">>> Checking for graphview.dart file..."
-if [ ! -f "$GRAPHVIEW_DIR/lib/graphview.dart" ]; then
-  echo "ERROR: graphview.dart file missing! Package is corrupted."
-  echo "Files in graphview package:"
-  ls -la "$GRAPHVIEW_DIR/" || true
-  exit 1
-fi
-echo "✓ graphview.dart exists and is readable"
+echo ">>> Found graphview.dart at: $GRAPHVIEW_LIB"
+echo ">>> Listing lib directory contents:"
+ls -la "$(dirname "$GRAPHVIEW_LIB")/"
 
 # Build for web
 echo ">>> Building for web..."
