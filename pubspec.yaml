@@ -42,7 +42,11 @@ dependencies:
   supabase_flutter: ^2.0.0
   
   # Graph Visualization
-  graphview: ^1.5.1
+  # Using git dependency to bypass pub.dev cache corruption issues on Netlify
+  graphview:
+    git:
+      url: https://github.com/nabil6391/graphview.git
+      ref: v1.5.1
   
   # State Management (Bloc)
   flutter_bloc: ^9.1.1  
