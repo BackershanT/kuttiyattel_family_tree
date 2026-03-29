@@ -31,10 +31,15 @@ flutter --version
 # 4. Clean everything for fresh start
 echo "Cleaning previous builds and pub cache..."
 flutter clean
+echo "Removing pub cache directory..."
 rm -rf ~/.pub-cache
+echo "Pub cache cleared successfully"
 
 echo "Getting fresh dependencies..."
 flutter pub get --verbose
+
+echo "Verifying graphview installation..."
+find ~/.pub-cache -name "graphview*" -type d 2>/dev/null | head -5 || echo "Note: Checking graphview location"
 
 # 5. Build Web for Release
 echo "Running Flutter Web Build..."
