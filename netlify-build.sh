@@ -26,6 +26,10 @@ echo "Enabling Flutter web support..."
 flutter config --enable-web
 flutter precache --web
 
+# Clear pub cache to ensure fresh, non-corrupted packages
+echo "Clearing pub cache..."
+rm -rf ~/.pub-cache
+
 # Get dependencies
 echo "Getting dependencies..."
 flutter pub get
