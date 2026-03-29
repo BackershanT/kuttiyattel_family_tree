@@ -1,10 +1,17 @@
 #!/bin/bash
 # ---------------------------------------------------------
 # Netlify Build Script for Flutter Web
+# CRITICAL: This script MUST run for Flutter web builds
 # ---------------------------------------------------------
 set -e # Exit on any error
 set -x # Print commands for debugging
 
+echo "=========================================="
+echo "CUSTOM NETLIFY BUILD SCRIPT STARTING"
+echo "=========================================="
+echo "Working directory: $(pwd)"
+echo "Files in directory: $(ls -la)"
+echo "=========================================="
 echo "--- Starting Flutter Build Process ---"
 
 # 1. Setup absolute paths

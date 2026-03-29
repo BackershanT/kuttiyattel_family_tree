@@ -1,12 +1,29 @@
+# ---------------------------------------------------------
+# Netlify Build Configuration for Flutter Web
+# This file forces Netlify to use our custom build process
+# ---------------------------------------------------------
+
 [build]
-  # Using an external script for better reliability, caching, and debugging
-  command = "bash netlify-build.sh"
+  # CRITICAL: This command MUST run - don't let Netlify auto-detect
+  command = "./netlify-build.sh"
   publish = "build/web"
+  
+  # Tell Netlify this is NOT a Node.js/Hugo/Jekyll/etc site
+  ignore = "git diff --quiet $CACHED_COMMIT_REF $COMMIT_REF -- netlify.toml pubspec.yaml lib/"
 
 [build.environment]
-  # Note: Ensure SUPABASE_URL and SUPABASE_ANON_KEY are set in Netlify UI
+  # Disable all Netlify auto-detections
+  NODE_VERSION = "false"
+  NPM_FLAGS = "--prefix=/dev/null"
+  
+  # Enable Flutter web support
   FLUTTER_VERSION = "stable"
-  # Note: The build script uses 'pub_cache' as the cache directory
+  PUB_CACHE = "/opt/buildhome/.pub-cache"
+
+# Disable all plugin auto-detections
+[[plugins]]
+  package = "@netlify/plugin-lighthouse"
+  disabled = true
 
 [[redirects]]
   # Essential for Flutter Web routing (SPAs)
