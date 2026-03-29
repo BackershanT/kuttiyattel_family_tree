@@ -28,9 +28,10 @@ fi
 flutter config --no-analytics
 flutter --version
 
-# 4. Clean first, then get fresh dependencies
-echo "Cleaning previous builds..."
+# 4. Clean everything for fresh start
+echo "Cleaning previous builds and pub cache..."
 flutter clean
+rm -rf ~/.pub-cache
 
 echo "Getting fresh dependencies..."
 flutter pub get --verbose
