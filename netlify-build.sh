@@ -1,15 +1,20 @@
 #!/bin/bash
 set -e
 
+echo "--- STARTING NETLIFY BUILD ---"
+
 # Install Flutter
-git clone https://github.com/flutter/flutter.git -b stable $HOME/flutter || true
+if [ ! -d "$HOME/flutter" ]; then
+  git clone https://github.com/flutter/flutter.git -b stable $HOME/flutter
+fi
 export PATH="$HOME/flutter/bin:$PATH"
 
 flutter doctor
 
-# VERY IMPORTANT: ensure correct directory
-# Using $NETLIFY_BUILD_BASE which is usually set by Netlify
-cd $NETLIFY_BUILD_BASE || cd .
+# DO NOT change directory to $NETLIFY_BUILD_BASE! 
+# We are already in the repository root where netlify-build.sh is located.
+echo "Current directory: $(pwd)"
+ls -F
 
 # Clean old state (critical fix)
 flutter clean
@@ -18,7 +23,7 @@ flutter clean
 flutter pub get
 
 # Verify package exists (debug step)
-ls $HOME/.pub-cache/hosted/pub.dev | grep graphview || echo "graphview missing"
+ls $HOME/.pub-cache/hosted/pub.dev | grep graphview || echo "graphview missing in cache"
 
-# Build web - explicitly using release for production
+# Build web - always use release for production
 flutter build web --release
