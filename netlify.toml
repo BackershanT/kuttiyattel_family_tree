@@ -5,14 +5,14 @@
       git clone https://github.com/flutter/flutter.git -b stable "$HOME/flutter"; 
     fi && \
     export PATH="$HOME/flutter/bin:$PATH" && \
-    # Visible folder ensures stable ../pub-cache paths in package_config.json
     export PUB_CACHE="$PWD/pub-cache" && \
     flutter doctor && \
     flutter clean && \
     rm -rf .dart_tool && \
     flutter pub get && \
-    # DEBUG: Verify package is in the custom cache
-    ls "$PUB_CACHE/hosted/pub.dev" | grep graphview && \
+    # FIX: Force absolute paths in package_config to bypass Netlify resolution bugs
+    sed -i "s|../pub-cache/|$PWD/pub-cache/|g" .dart_tool/package_config.json && \
+    sed -i "s|pub-cache/|$PWD/pub-cache/|g" .dart_tool/package_config.json && \
     flutter build web --release \
       --dart-define=SUPABASE_URL=$SUPABASE_URL \
       --dart-define=SUPABASE_ANON_KEY=$SUPABASE_ANON_KEY
