@@ -1,8 +1,8 @@
 [build]
   # Consolidated build command: clones flutter, sets path, installs deps, and builds web
   command = """
-    if [ ! -d "$flutter" ]; then 
-      git clone https://github.com/flutter/flutter.git -b stable "flutter"; 
+    if [ ! -d "$HOME/flutter" ]; then 
+      git clone https://github.com/flutter/flutter.git -b stable "$HOME/flutter"; 
     fi && \
     export PATH="$HOME/flutter/bin:$PATH" && \
     export PUB_CACHE="$HOME/.pub-cache" && \
