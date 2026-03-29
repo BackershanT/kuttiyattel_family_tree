@@ -207,16 +207,11 @@ class _TreeGraphWidgetState extends State<TreeGraphWidget> {
           return InteractiveViewer(
             transformationController: _transformationController,
             constrained: false,
-            boundaryMargin: const EdgeInsets.all(5000), // Increased margin
-            minScale: 0.001, // Allow zooming out more
+            boundaryMargin: const EdgeInsets.all(5000),
+            minScale: 0.001,
             maxScale: 2.0,
-            child: SizedBox(
-               // Large canvas to ensure graph is never constrained
-              width: 10000,
-              height: 10000,
-              child: Align(
-                alignment: Alignment.topLeft,
-                child: GraphView(
+            child: UnconstrainedBox(
+              child: GraphView(
                   graph: graph,
                   algorithm: algorithm,
                   builder: (Node node) {
@@ -254,9 +249,8 @@ class _TreeGraphWidgetState extends State<TreeGraphWidget> {
                   },
                 ),
               ),
-            ),
-          );
-        }
+            );
+          }
 
         return const Center(
           child: Text('No family tree data available'),
