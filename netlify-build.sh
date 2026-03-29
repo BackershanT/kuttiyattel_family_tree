@@ -1,60 +1,40 @@
-#!/bin/bash
+#!/usr/bin/env bash
 # ---------------------------------------------------------
-# Netlify Build Script for Flutter Web
-# CRITICAL: This script MUST run for Flutter web builds
+# Netlify Build Script for Flutter Web - SIMPLIFIED VERSION
+# Based on Netlify's official recommendations
 # ---------------------------------------------------------
-set -e # Exit on any error
-set -x # Print commands for debugging
+set -euo pipefail
 
-echo "=========================================="
-echo "CUSTOM NETLIFY BUILD SCRIPT STARTING"
-echo "=========================================="
-echo "Working directory: $(pwd)"
-echo "Files in directory: $(ls -la)"
-echo "=========================================="
-echo "--- Starting Flutter Build Process ---"
+echo "========================================="
+echo "FLUTTER WEB BUILD STARTING"
+echo "========================================="
+echo "Current directory: $(pwd)"
+echo "Contents: $(ls -la)"
+echo "========================================="
 
-# 1. Setup absolute paths
-PROJECT_DIR=$(pwd)
-FLUTTER_SDK_DIR="$PROJECT_DIR/flutter_sdk"
-# Don't override PUB_CACHE - let Flutter use its default location
-# This avoids cache path inconsistencies between commands
-export PATH="$FLUTTER_SDK_DIR/bin:$PATH"
+# Install Flutter SDK
+echo "Installing Flutter SDK..."
+git clone https://github.com/flutter/flutter.git --depth 1 -b stable flutter-sdk
+export PATH="$PWD/flutter-sdk/bin:$PATH"
 
-# 2. Install or Use Cached Flutter SDK
-if [ ! -d "$FLUTTER_SDK_DIR" ]; then
-  echo "Flutter SDK not found in cache. Cloning..."
-  git clone https://github.com/flutter/flutter.git -b stable --depth 1 "$FLUTTER_SDK_DIR"
-else
-  echo "Using cached Flutter SDK."
-  # Optional: Update the SDK if needed, but keeping it stable is faster
-  # cd "$FLUTTER_SDK_DIR" && git pull && cd "$PROJECT_DIR"
-fi
-
-# 3. Disable Analytics and show version
-flutter config --no-analytics
+# Verify Flutter installation
+echo "Flutter version:"
 flutter --version
 
-# 4. Clean everything for fresh start
-echo "Cleaning previous builds and pub cache..."
-flutter clean
-echo "Removing pub cache directory..."
-rm -rf ~/.pub-cache
-echo "Pub cache cleared successfully"
+# Enable web support and precache web artifacts
+echo "Enabling Flutter web support..."
+flutter config --enable-web
+flutter precache --web
 
-echo "Getting fresh dependencies..."
-flutter pub get --verbose
+# Get dependencies
+echo "Getting dependencies..."
+flutter pub get
 
-echo "Verifying graphview installation..."
-find ~/.pub-cache -name "graphview*" -type d 2>/dev/null | head -5 || echo "Note: Checking graphview location"
+# Build for web
+echo "Building for web..."
+flutter build web --release
 
-# 5. Build Web for Release
-echo "Running Flutter Web Build..."
-# Note: CanvasKit is the default for premium look, but if it fails, try --web-renderer html
-# Adding --no-wasm-dry-run as dependencies have incompatibilities currently
-flutter build web --release \
-  --no-wasm-dry-run \
-  --dart-define=SUPABASE_URL="$SUPABASE_URL" \
-  --dart-define=SUPABASE_ANON_KEY="$SUPABASE_ANON_KEY"
-
-echo "--- Build Finished Successfully ---"
+echo "========================================="
+echo "BUILD COMPLETED SUCCESSFULLY"
+echo "Output directory: build/web"
+echo "========================================="
