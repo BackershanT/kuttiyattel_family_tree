@@ -4,26 +4,32 @@ set -e
 echo "--- STARTING NETLIFY BUILD ---"
 
 # Install Flutter
-if [ ! -d "$HOME/flutter" ]; then
-  git clone https://github.com/flutter/flutter.git -b stable $HOME/flutter
-fi
-export PATH="$HOME/flutter/bin:$PATH"
+git clone https://github.com/flutter/flutter.git -b stable /opt/flutter || true
+export PATH="/opt/flutter/bin:$PATH"
+
+# 🔥 FORCE correct pub cache path for Netlify
+export PUB_CACHE=/opt/buildhome/.pub-cache
 
 flutter doctor
 
-# DO NOT change directory to $NETLIFY_BUILD_BASE! 
-# We are already in the repository root where netlify-build.sh is located.
 echo "Current directory: $(pwd)"
-ls -F
 
-# Clean old state (critical fix)
+# Clean EVERYTHING (important)
 flutter clean
+rm -rf .dart_tool
+rm -rf build
 
-# Get dependencies properly
+# 🔥 FORCE reinstall dependencies
 flutter pub get
 
-# Verify package exists (debug step)
-ls $HOME/.pub-cache/hosted/pub.dev | grep graphview || echo "graphview missing in cache"
+# DEBUG (real path)
+echo "Checking PUB_CACHE..."
+ls /opt/buildhome/.pub-cache/hosted/pub.dev | grep graphview || echo "❌ graphview still missing"
 
-# Build web - always use release for production
-flutter build web --release
+# Build with --dart-define for production environment variables
+echo "--- BUILDING WEB ---"
+flutter build web --release \
+  --dart-define=SUPABASE_URL=$SUPABASE_URL \
+  --dart-define=SUPABASE_ANON_KEY=$SUPABASE_ANON_KEY
+
+echo "--- BUILD COMPLETE ---"
