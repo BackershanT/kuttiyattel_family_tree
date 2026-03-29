@@ -46,7 +46,7 @@ dependencies:
   graphview:
     git:
       url: https://github.com/nabil6391/graphview.git
-      ref: v1.5.1
+      ref: 1.5.1
   
   # State Management (Bloc)
   flutter_bloc: ^9.1.1  
