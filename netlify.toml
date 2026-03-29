@@ -1,0 +1,27 @@
+[build]
+  # Consolidated build command: clones flutter, sets path, installs deps, and builds web
+  command = """
+    if [ ! -d "$HOME/flutter" ]; then 
+      git clone https://github.com/flutter/flutter.git -b stable "$HOME/flutter"; 
+    fi && \
+    export PATH="$HOME/flutter/bin:$PATH" && \
+    flutter doctor && \
+    export PUB_CACHE="$PWD/.pub-cache" && \
+    flutter clean && \
+    rm -rf .dart_tool && \
+    flutter pub get && \
+    flutter build web --release \
+      --dart-define=SUPABASE_URL=$SUPABASE_URL \
+      --dart-define=SUPABASE_ANON_KEY=$SUPABASE_ANON_KEY
+  """
+  publish = "build/web"
+
+[build.environment]
+  # Ensuring the build environment uses the correct settings
+  FLUTTER_VERSION = "stable"
+
+[[redirects]]
+  # Essential for Flutter Web routing (SPAs)
+  from = "/*"
+  to = "/index.html"
+  status = 200
