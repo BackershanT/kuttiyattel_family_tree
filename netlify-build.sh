@@ -28,16 +28,12 @@ fi
 flutter config --no-analytics
 flutter --version
 
-# 4. Get Dependencies
-echo "Installing dependencies..."
-flutter pub get
-
-# 4.5. Clean build to ensure fresh package resolution
+# 4. Clean first, then get fresh dependencies
 echo "Cleaning previous builds..."
 flutter clean
 
 echo "Getting fresh dependencies..."
-flutter pub get
+flutter pub get --verbose
 
 # 5. Build Web for Release
 echo "Running Flutter Web Build..."
