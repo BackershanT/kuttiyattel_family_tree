@@ -5,12 +5,14 @@
       git clone https://github.com/flutter/flutter.git -b stable "$HOME/flutter"; 
     fi && \
     export PATH="$HOME/flutter/bin:$PATH" && \
-    export PUB_CACHE="$HOME/.pub-cache" && \
+    # Visible folder ensures stable ../pub-cache paths in package_config.json
+    export PUB_CACHE="$PWD/pub-cache" && \
     flutter doctor && \
     flutter clean && \
     rm -rf .dart_tool && \
-    rm -rf .pub-cache && \
     flutter pub get && \
+    # DEBUG: Verify package is in the custom cache
+    ls "$PUB_CACHE/hosted/pub.dev" | grep graphview && \
     flutter build web --release \
       --dart-define=SUPABASE_URL=$SUPABASE_URL \
       --dart-define=SUPABASE_ANON_KEY=$SUPABASE_ANON_KEY
