@@ -6,8 +6,8 @@
       git clone https://github.com/flutter/flutter.git -b stable "$HOME/flutter"; 
     fi && \
     export PATH="$HOME/flutter/bin:$PATH" && \
-    # CRITICAL: force default internal caching to avoid path corruption
-    unset PUB_CACHE && \
+    # Using local PUB_CACHE to ensure absolute path stability during compilation
+    export PUB_CACHE="$(pwd)/.pub-cache" && \
     flutter doctor && \
     flutter clean && \
     flutter pub get && \
