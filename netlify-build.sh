@@ -1,20 +1,18 @@
-#!/usr/bin/env bash
-set -e
+#!/bin/bash
 
-# Install Flutter SDK into $HOME/flutter if not present
+set -e  # STOP on error (important)
+
+# Install Flutter
 if [ ! -d "$HOME/flutter" ]; then
   git clone https://github.com/flutter/flutter.git -b stable $HOME/flutter
 fi
 
 export PATH="$HOME/flutter/bin:$PATH"
 
-# Force Flutter to download required artifacts
-flutter channel stable
-flutter upgrade
-flutter --version
-flutter doctor -v
+flutter doctor
 
-# Get packages and build web
-flutter clean
+# Get dependencies
 flutter pub get
-flutter build web --release -v
+
+# Build web
+flutter build web
