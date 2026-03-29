@@ -55,6 +55,13 @@ class _TreeGraphWidgetState extends State<TreeGraphWidget> {
     super.initState();
     _initGraphView();
     _transformationController.addListener(_onTransformationChanged);
+    
+    // Initial build if state is already loaded
+    final state = context.read<TreeBloc>().state;
+    if (state is TreeLoaded) {
+      // Use microtask to avoid calling setState during initialization
+      Future.microtask(() => _buildGraph(state));
+    }
   }
 
   void _initGraphView() {
@@ -197,70 +204,59 @@ class _TreeGraphWidgetState extends State<TreeGraphWidget> {
         }
 
         if (state is TreeLoaded) {
-          // If graph is empty (e.g. initial load), build it once
-          if (graph.nodes.isEmpty) {
-            _buildGraph(state);
-            _centerRootNode();
-          }
+          return InteractiveViewer(
+            transformationController: _transformationController,
+            constrained: false,
+            boundaryMargin: const EdgeInsets.all(5000), // Increased margin
+            minScale: 0.001, // Allow zooming out more
+            maxScale: 2.0,
+            child: SizedBox(
+               // Large canvas to ensure graph is never constrained
+              width: 10000,
+              height: 10000,
+              child: Align(
+                alignment: Alignment.topLeft,
+                child: GraphView(
+                  graph: graph,
+                  algorithm: algorithm,
+                  builder: (Node node) {
+                    final key = node.key;
+                    if (key == null || key is! ValueKey) {
+                      return const SizedBox.shrink();
+                    }
+                    
+                    final nodeId = key.value as String;
+                    final treeNode = state.allNodes[nodeId];
+                    if (treeNode == null) return const SizedBox.shrink();
 
-          return LayoutBuilder(
-            builder: (context, constraints) {
-              // Already initialized at the start of build
+                    final isMatch = widget.searchQuery.isEmpty || 
+                        treeNode.person.name.toLowerCase().contains(widget.searchQuery.toLowerCase());
 
-              return InteractiveViewer(
-                transformationController: _transformationController,
-                constrained: false,
-                boundaryMargin: const EdgeInsets.all(2000),
-                minScale: 0.01,
-                maxScale: 5,
-                child: SizedBox(
-                  width: 5000,
-                  height: 5000,
-                  child: Align(
-                    alignment: Alignment.topLeft,
-                    child: GraphView(
-                    graph: graph,
-                    algorithm: algorithm,
-                    builder: (Node node) {
-                      final key = node.key;
-                      if (key == null || key is! ValueKey) {
-                        return const SizedBox.shrink();
-                      }
-                      
-                      final nodeId = key.value as String;
-                      final treeNode = state.allNodes[nodeId];
-                      if (treeNode == null) return const SizedBox.shrink();
-
-                      final isMatch = widget.searchQuery.isEmpty || 
-                          treeNode.person.name.toLowerCase().contains(widget.searchQuery.toLowerCase());
-
-                      return Opacity(
-                        opacity: isMatch ? 1.0 : 0.3,
-                        child: PersonCardWidget(
-                          node: treeNode,
-                          showExpandButton: treeNode.children.isNotEmpty,
-                          onTap: () {
-                            if (treeNode.person.id != 'virtual_root') {
-                              GoRouter.of(context).go('/person-details/${treeNode.person.id}');
-                            }
-                          },
-                          onExpandToggle: () {
-                            context.read<TreeBloc>().add(
-                                  ToggleNodeExpandCollapseEvent(
-                                    personId: treeNode.person.id,
-                                  ),
-                                );
-                          },
-                        ),
-                      );
-                    },
-                  ),
+                    return Opacity(
+                      opacity: isMatch ? 1.0 : 0.3,
+                      child: PersonCardWidget(
+                        node: treeNode,
+                        showExpandButton: treeNode.children.isNotEmpty,
+                        onTap: () {
+                          if (treeNode.person.id != 'virtual_root') {
+                            GoRouter.of(context).push('/person-details/${treeNode.person.id}');
+                          }
+                        },
+                        onExpandToggle: () {
+                          context.read<TreeBloc>().add(
+                                ToggleNodeExpandCollapseEvent(
+                                  personId: treeNode.person.id,
+                                ),
+                              );
+                        },
+                      ),
+                    );
+                  },
                 ),
               ),
-            );
-          },
-        );
-      }
+            ),
+          );
+        }
 
         return const Center(
           child: Text('No family tree data available'),
