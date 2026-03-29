@@ -1,19 +1,16 @@
 [build]
   # Consolidated build command: clones flutter, sets path, installs deps, and builds web
   command = """
-    # Clone Flutter into repo root (ignored)
-    if [ ! -d "flutter" ]; then 
-      git clone https://github.com/flutter/flutter.git --depth 1 -b stable "flutter"; 
+    # Install Flutter (clean)
+    if [ ! -d "$HOME/flutter" ]; then 
+      git clone https://github.com/flutter/flutter.git -b stable "$HOME/flutter"; 
     fi && \
-    export PATH="$PATH:`pwd`/flutter/bin" && \
-    export PUB_CACHE="$PWD/pub-cache" && \
+    export PATH="$HOME/flutter/bin:$PATH" && \
+    # CRITICAL: force default internal caching to avoid path corruption
+    unset PUB_CACHE && \
     flutter doctor && \
     flutter clean && \
-    rm -rf .dart_tool && \
     flutter pub get && \
-    # FIX: Force absolute paths to bypass Netlify resolution bugs
-    sed -i "s|../pub-cache/|$PWD/pub-cache/|g" .dart_tool/package_config.json && \
-    sed -i "s|pub-cache/|$PWD/pub-cache/|g" .dart_tool/package_config.json && \
     flutter build web --release \
       --dart-define=SUPABASE_URL=$SUPABASE_URL \
       --dart-define=SUPABASE_ANON_KEY=$SUPABASE_ANON_KEY
