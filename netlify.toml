@@ -1,24 +1,11 @@
 [build]
-  # Consolidated build command: clones flutter, sets path, installs deps, and builds web
-  command = """
-    # Install Flutter (clean)
-    if [ ! -d "$HOME/flutter" ]; then 
-      git clone https://github.com/flutter/flutter.git -b stable "$HOME/flutter"; 
-    fi && \
-    export PATH="$HOME/flutter/bin:$PATH" && \
-    # Explicit absolute path for the pub cache as suggested in the analysis
-    export PUB_CACHE="$HOME/.pub-cache" && \
-    flutter doctor && \
-    flutter clean && \
-    flutter pub get && \
-    flutter build web --release \
-      --dart-define=SUPABASE_URL=$SUPABASE_URL \
-      --dart-define=SUPABASE_ANON_KEY=$SUPABASE_ANON_KEY
-  """
+  # Using an external script for better reliability, caching, and debugging
+  command = "bash netlify-build.sh"
   publish = "build/web"
 
 [build.environment]
   # Ensuring the build environment uses the correct settings
+  # Note: Ensure SUPABASE_URL and SUPABASE_ANON_KEY are set in Netlify UI
   FLUTTER_VERSION = "stable"
 
 [[redirects]]
