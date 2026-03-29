@@ -10,8 +10,8 @@ echo "--- Starting Flutter Build Process ---"
 # 1. Setup absolute paths
 PROJECT_DIR=$(pwd)
 FLUTTER_SDK_DIR="$PROJECT_DIR/flutter_sdk"
-# Set explicit PUB_CACHE to ensure consistent package location
-export PUB_CACHE="$HOME/.pub-cache"
+# Don't override PUB_CACHE - let Flutter use its default location
+# This avoids cache path inconsistencies between commands
 export PATH="$FLUTTER_SDK_DIR/bin:$PATH"
 
 # 2. Install or Use Cached Flutter SDK
@@ -32,17 +32,12 @@ flutter --version
 echo "Installing dependencies..."
 flutter pub get
 
-# 4.5. Verify graphview package is installed
-echo "--- Verifying graphview package installation ---"
-if [ -d "$PUB_CACHE/hosted/pub.dev/graphview-1.5.1" ]; then
-  echo "✓ graphview 1.5.1 found in pub.dev cache"
-elif [ -d "$PUB_CACHE/hosted/pub.dartlang.org/graphview-1.5.1" ]; then
-  echo "✓ graphview 1.5.1 found in pub.dartlang.org cache"
-else
-  echo "⚠ Warning: graphview directory not found, but flutter pub get succeeded"
-  echo "Listing PUB_CACHE contents:"
-  ls -la "$PUB_CACHE/hosted/" 2>/dev/null || echo "No hosted directory yet"
-fi
+# 4.5. Clean build to ensure fresh package resolution
+echo "Cleaning previous builds..."
+flutter clean
+
+echo "Getting fresh dependencies..."
+flutter pub get
 
 # 5. Build Web for Release
 echo "Running Flutter Web Build..."
