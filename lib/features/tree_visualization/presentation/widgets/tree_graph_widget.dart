@@ -22,15 +22,60 @@ class TreeGraphWidget extends StatefulWidget {
 }
 
 class _TreeGraphWidgetState extends State<TreeGraphWidget> {
-  late Graph graph;
-  late Map<String, Node> nodeMap;
+  Graph? _graph;
+  Map<String, Node>? _nodeMap;
+  BuchheimWalkerConfiguration? _configuration;
+  BuchheimWalkerAlgorithm? _algorithm;
+  bool _isInitialized = false;
+
+  Graph get graph {
+    _graph ??= Graph();
+    return _graph!;
+  }
+
+  Map<String, Node> get nodeMap {
+    _nodeMap ??= {};
+    return _nodeMap!;
+  }
+
+  BuchheimWalkerConfiguration get configuration {
+    if (!_isInitialized) _initGraphView();
+    return _configuration!;
+  }
+
+  BuchheimWalkerAlgorithm get algorithm {
+    if (!_isInitialized) _initGraphView();
+    return _algorithm!;
+  }
+
+  final TransformationController _transformationController = TransformationController();
 
   @override
   void initState() {
     super.initState();
-    graph = Graph();
-    nodeMap = {};
+    _initGraphView();
     _transformationController.addListener(_onTransformationChanged);
+  }
+
+  void _initGraphView() {
+    _graph ??= Graph();
+    _nodeMap ??= {};
+    
+    if (_isInitialized && _configuration != null && _algorithm != null) return;
+    
+    // Initialize configuration and algorithm once
+    _configuration = BuchheimWalkerConfiguration()
+      ..orientation = BuchheimWalkerConfiguration.ORIENTATION_TOP_BOTTOM
+      ..siblingSeparation = 150
+      ..levelSeparation = 200
+      ..subtreeSeparation = 200;
+      
+    _algorithm = BuchheimWalkerAlgorithm(
+      _configuration!,
+      TreeEdgeRenderer(_configuration!),
+    );
+    
+    _isInitialized = true;
   }
 
   void _onTransformationChanged() {
@@ -41,69 +86,49 @@ class _TreeGraphWidgetState extends State<TreeGraphWidget> {
   }
 
   void _buildGraph(TreeLoaded state) {
-    graph = Graph();
-    nodeMap = {};
+    final newGraph = Graph();
+    final newNodeMap = <String, Node>{};
 
     // Build nodes and edges recursively
-    _addNodeAndChildren(state.root);
+    _addNodeAndChildrenToGraph(state.root, newGraph, newNodeMap);
 
-    // Defer setState until after build is complete
-    WidgetsBinding.instance.addPostFrameCallback((_) {
-      if (mounted) {
-        setState(() {});
-      }
-    });
+    // Update state once fully built
+    if (mounted) {
+      setState(() {
+        _graph = newGraph;
+        _nodeMap = newNodeMap;
+      });
+    }
   }
 
-  void _addNodeAndChildren(TreeNodeData node) {
+  void _addNodeAndChildrenToGraph(TreeNodeData treeNode, Graph targetGraph, Map<String, Node> targetNodeMap) {
     // Create node if not exists
-    if (!nodeMap.containsKey(node.person.id)) {
-      // Use Node.Id constructor which should work across platforms
-      final graphNode = Node.Id(node.person.id);
-      nodeMap[node.person.id] = graphNode;
-      graph.addNode(graphNode);
-      
-      // Debug logging for first few nodes
-      if (graph.nodes.length <= 3) {
-        final keyValue = graphNode.key?.value != null 
-            ? graphNode.key!.value!.toString()
-            : 'key or key.value is NULL';
-        print('  Added node: ID=${node.person.id}, Name=${node.person.name}, GraphNode key=$keyValue');
-      }
+    if (!targetNodeMap.containsKey(treeNode.person.id)) {
+      final graphNode = Node.Id(treeNode.person.id);
+      targetNodeMap[treeNode.person.id] = graphNode;
+      targetGraph.addNode(graphNode);
     }
+
+    final parentNode = targetNodeMap[treeNode.person.id]!;
 
     // Add children and edges
-    for (final child in node.children) {
-      if (!nodeMap.containsKey(child.person.id)) {
+    for (final child in treeNode.children) {
+      if (!targetNodeMap.containsKey(child.person.id)) {
         final childNode = Node.Id(child.person.id);
-        nodeMap[child.person.id] = childNode;
-        graph.addNode(childNode);
-        
-        // Debug logging for first few children
-        if (graph.nodes.length <= 5) {
-          final keyValue = childNode.key?.value != null 
-              ? childNode.key!.value!.toString()
-              : 'key or key.value is NULL';
-          print('  Added child: ID=${child.person.id}, Name=${child.person.name}, GraphNode key=$keyValue');
-        }
+        targetNodeMap[child.person.id] = childNode;
+        targetGraph.addNode(childNode);
       }
 
-      // Add edge from parent to child - with null safety
-      final parentNode = nodeMap[node.person.id];
-      final childNode = nodeMap[child.person.id];
-      
-      if (parentNode != null && childNode != null) {
-        graph.addEdge(parentNode, childNode);
-      } else {
-        print('ERROR: Cannot add edge - parent or child node is null');
-      }
+      final childNode = targetNodeMap[child.person.id]!;
+      targetGraph.addEdge(parentNode, childNode);
       
       // Recursively add grandchildren
-      _addNodeAndChildren(child);
+      _addNodeAndChildrenToGraph(child, targetGraph, targetNodeMap);
     }
   }
 
-  final TransformationController _transformationController = TransformationController();
+  // Removed old recursive helper replaced by _addNodeAndChildrenToGraph
+
 
   @override
   void dispose() {
@@ -112,15 +137,11 @@ class _TreeGraphWidgetState extends State<TreeGraphWidget> {
   }
 
   void _centerRootNode() {
-    if (nodeMap.containsKey('virtual_root')) {
-      // Small delay to ensure layout is complete
-      Future.delayed(const Duration(milliseconds: 500), () {
-        if (!mounted) return;
-        
-        // Reset transformation to top-left of the content
-        _transformationController.value = Matrix4.identity();
-      });
-    }
+    // Delay slightly to ensure layout is done
+    Future.delayed(const Duration(milliseconds: 300), () {
+      if (!mounted) return;
+      _transformationController.value = Matrix4.identity();
+    });
   }
 
   @override
@@ -137,6 +158,9 @@ class _TreeGraphWidgetState extends State<TreeGraphWidget> {
         }
       },
       builder: (context, state) {
+        // Ensure algorithm and other fields are initialized at the very start of build
+        _initGraphView();
+
         if (state is TreeLoading) {
           return const Center(
             child: CircularProgressIndicator(),
@@ -181,11 +205,7 @@ class _TreeGraphWidgetState extends State<TreeGraphWidget> {
 
           return LayoutBuilder(
             builder: (context, constraints) {
-              final configuration = BuchheimWalkerConfiguration()
-                ..orientation = BuchheimWalkerConfiguration.ORIENTATION_TOP_BOTTOM
-                ..siblingSeparation = 150
-                ..levelSeparation = 200
-                ..subtreeSeparation = 200;
+              // Already initialized at the start of build
 
               return InteractiveViewer(
                 transformationController: _transformationController,
@@ -196,14 +216,18 @@ class _TreeGraphWidgetState extends State<TreeGraphWidget> {
                 child: SizedBox(
                   width: 5000,
                   height: 5000,
-                  child: GraphView(
+                  child: Align(
+                    alignment: Alignment.topLeft,
+                    child: GraphView(
                     graph: graph,
-                    algorithm: BuchheimWalkerAlgorithm(
-                      configuration,
-                      TreeEdgeRenderer(configuration),
-                    ),
+                    algorithm: algorithm,
                     builder: (Node node) {
-                      final nodeId = node.key!.value as String;
+                      final key = node.key;
+                      if (key == null || key is! ValueKey) {
+                        return const SizedBox.shrink();
+                      }
+                      
+                      final nodeId = key.value as String;
                       final treeNode = state.allNodes[nodeId];
                       if (treeNode == null) return const SizedBox.shrink();
 
@@ -232,10 +256,11 @@ class _TreeGraphWidgetState extends State<TreeGraphWidget> {
                     },
                   ),
                 ),
-              );
-            },
-          );
-        }
+              ),
+            );
+          },
+        );
+      }
 
         return const Center(
           child: Text('No family tree data available'),
