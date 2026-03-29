@@ -4,9 +4,9 @@
   publish = "build/web"
 
 [build.environment]
-  # Ensuring the build environment uses the correct settings
   # Note: Ensure SUPABASE_URL and SUPABASE_ANON_KEY are set in Netlify UI
   FLUTTER_VERSION = "stable"
+  # Note: The build script uses 'pub_cache' as the cache directory
 
 [[redirects]]
   # Essential for Flutter Web routing (SPAs)

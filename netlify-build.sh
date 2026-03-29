@@ -7,11 +7,11 @@ set -x # Print commands for debugging
 
 echo "--- Starting Flutter Build Process ---"
 
-# 1. Setup paths
-# We use the project directory to store the SDK and cache so Netlify can persist them
+# 1. Setup absolute paths
 PROJECT_DIR=$(pwd)
 FLUTTER_SDK_DIR="$PROJECT_DIR/flutter_sdk"
-export PUB_CACHE="$PROJECT_DIR/.pub_cache"
+# Using a non-dot directory to avoid resolution issues in some CI environments
+export PUB_CACHE="$PROJECT_DIR/pub_cache"
 export PATH="$FLUTTER_SDK_DIR/bin:$PATH"
 
 # 2. Install or Use Cached Flutter SDK
@@ -32,10 +32,18 @@ flutter --version
 echo "Installing dependencies..."
 flutter pub get
 
+# 4.5. Pre-build Diagnostics (To verify package exists in cache)
+echo "--- Verifying Cache Content ---"
+ls -la "$PUB_CACHE/hosted/pub.dev" || echo "Note: pub.dev directory not found, check version differences"
+ls -la "$PUB_CACHE/hosted/pub.dartlang.org" || echo "Note: pub.dartlang.org directory not found"
+find "$PUB_CACHE" -name "graphview.dart" || echo "ERROR: graphview.dart not found in pub_cache!"
+
 # 5. Build Web for Release
 echo "Running Flutter Web Build..."
 # Note: CanvasKit is the default for premium look, but if it fails, try --web-renderer html
+# Adding --no-wasm-dry-run as dependencies have incompatibilities currently
 flutter build web --release \
+  --no-wasm-dry-run \
   --dart-define=SUPABASE_URL="$SUPABASE_URL" \
   --dart-define=SUPABASE_ANON_KEY="$SUPABASE_ANON_KEY"
 
