@@ -1,5 +1,5 @@
 import 'package:flutter/material.dart';
-import 'package:flutter_graph_view/flutter_graph_view.dart';
+import 'package:graphview/graphview.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:go_router/go_router.dart';
 import '../bloc/bloc.dart';

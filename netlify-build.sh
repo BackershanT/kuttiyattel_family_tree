@@ -35,9 +35,20 @@ flutter clean
 echo ">>> Creating fresh pub cache..."
 mkdir -p $HOME/.pub-cache/hosted/pub.dev
 
-# Fetch dependencies completely fresh
-echo ">>> Fetching dependencies FRESH from pub.dev..."
-flutter pub get
+# Fetch dependencies with retry logic
+echo ">>> Fetching dependencies FRESH from pub.dev (attempt 1/3)..."
+for i in 1 2 3; do
+  if flutter pub get; then
+    echo ">>> Dependencies fetched successfully on attempt $i"
+    break
+  elif [ $i -eq 3 ]; then
+    echo ">>> ERROR: Failed to fetch dependencies after 3 attempts"
+    exit 1
+  else
+    echo ">>> Attempt $i failed, retrying..."
+    rm -rf $HOME/.pub-cache/hosted/pub.dev/graphview-*
+  fi
+done
 
 # Verify graphview installation
 echo ">>> Verifying graphview package..."
